@@ -382,6 +382,58 @@ filegroup(
     visibility = ["//visibility:private"],
 )
 
+# cc_library(
+#     name="iRRAM_lib",
+#     srcs=["iRRAM/src/MPFR/MPFR_ext.c",
+#     "iRRAM/src/MPFR/mpfr_extension.cc",
+#     "iRRAM/src/COMPLEX.cc",
+#     "iRRAM/src/convert.cc",
+#     "iRRAM/src/DYADIC.cc",
+#     "iRRAM/src/errno.cc",
+#     "iRRAM/src/exp_log.cc",
+#     "iRRAM/src/GMP_int_ext.c",
+#     "iRRAM/src/GMP_rat_ext.c",
+#     "iRRAM/src/INTERVAL.cc",
+#     "iRRAM/src/LAZY_BOOLEAN.cc",
+#     "iRRAM/src/limits.cc",
+#     "iRRAM/src/pi_ln2.cc",
+#     "iRRAM/src/RATIONAL.cc",
+#     "iRRAM/src/REALLIB.cc",
+#     "iRRAM/src/REALmain.cc",
+#     "iRRAM/src/REALMATRIX.cc",
+#     "iRRAM/src/REALS.cc",
+#     "iRRAM/src/sin_cos.cc",
+#     "iRRAM/src/SPARSEREALMATRIX.cc",
+#     "iRRAM/src/sqrt.cc",
+#     "iRRAM/src/stack.cc",
+#     "iRRAM/src/STREAMS.cc",],
+#     hdrs=["iRRAM/include/iRRAM.h",
+#     "iRRAM/include/iRRAM/cache.h",
+#     "iRRAM/include/iRRAM/FUNCTION.h",
+#     "iRRAM/include/iRRAM/lib.h",
+#     "iRRAM/include/iRRAM/REAL.h",
+#     "iRRAM/include/iRRAM/version.h",
+#     "iRRAM/include/iRRAM/COMPLEX.h",
+#     "iRRAM/include/iRRAM/GMP_intrat.h",
+#     "iRRAM/include/iRRAM/limit_templates.h",
+#     "iRRAM/include/iRRAM/REALMATRIX.h",
+#     "iRRAM/include/iRRAM/core.h",
+#     "iRRAM/include/iRRAM/INTEGER.h",
+#     "iRRAM/include/iRRAM/mpfr_extension.h",
+    # "iRRAM/include/iRRAM/SPARSEREALMATRIX.h",
+#     "iRRAM/include/iRRAM/DYADIC.h",
+#     "iRRAM/include/iRRAM/INTERVAL.h",
+#     "iRRAM/include/iRRAM/MPFR_interface.h",
+#     "iRRAM/include/iRRAM/STREAMS.h",
+#     "iRRAM/include/iRRAM/errno.h",
+#     "iRRAM/include/iRRAM/LAZYBOOLEAN.h",
+#     "iRRAM/include/iRRAM/RATIONAL.h",
+#     "iRRAM/include/iRRAM/SWITCHES.h",
+#     "iRRAM/src/MPFR/MPFR_ext.h"],
+#     alwayslink = 1,
+#     visibility = ["//visibility:public"],
+# )
+
 cc_library(
     name = "platform_port",
     srcs = [
@@ -393,6 +445,7 @@ cc_library(
         ":platform_port_internal_hdrs",
     ],
     copts = tf_copts() + tf_additional_numa_copts(),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     visibility = [":__subpackages__"],
     deps = [
         "//tensorflow/core/platform:platform",
@@ -400,6 +453,7 @@ cc_library(
         "@com_google_absl//absl/base",
         "//tensorflow/core/platform/default/build_config:port",
         "@snappy",
+        #":iRRAM_lib",
     ] + tf_additional_numa_deps(),
 )
 
@@ -511,6 +565,7 @@ cc_library(
         ":platform_env_internal_hdrs",
     ],
     copts = tf_copts(),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     visibility = [
         ":__subpackages__",
         "//tensorflow/c:__subpackages__",
@@ -522,6 +577,7 @@ cc_library(
         ":platform_base",
         ":platform_port",
         ":platform_protobuf",
+        #":iRRAM_lib",
         "//tensorflow/core/platform",
         "//tensorflow/core/platform/default/build_config:env",
         "//tensorflow/core/platform/default/build_config:port",
@@ -699,6 +755,7 @@ cc_library(
     ],
 )
 
+#mark
 # This build rule (along with :lib_internal, :framework, and
 # :framework_internal) purposefully omits the definitions of many declared
 # symbols, which are included in //tensorflow:libtensorflow_framework.so. Using
@@ -879,6 +936,7 @@ cc_library(
     ],
 )
 
+#mark
 # This build rule (along with :framework_internal, :lib, and :lib_internal)
 # purposefully omits the definitions of many declared symbols, which are
 # included in //tensorflow:libtensorflow_framework.so. Using tf_cc_test and tf_cc_binary
@@ -988,9 +1046,11 @@ tf_cuda_library(
     }) + if_mkl([
         "util/mkl_util.h",
     ]),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     visibility = ["//visibility:public"],
     deps = [
         ":framework_internal",
+        #":iRRAM_lib",
         "@com_google_absl//absl/base",
     ],
 )
@@ -1010,10 +1070,12 @@ cc_library(
     hdrs = [
         "framework/allocator.h",
     ],
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     features = ["parse_headers"],
     visibility = ["//visibility:public"],
     deps = [
         ":lib",
+        #":iRRAM_lib",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "//third_party/eigen3",
@@ -1036,8 +1098,10 @@ cc_library(
         "framework/tracking_allocator.h",
         "framework/type_traits.h",
     ],
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     deps = [
         ":lib",
+        #":iRRAM_lib",
         "//third_party/eigen3",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
@@ -1123,6 +1187,7 @@ cc_library(
     ],
 )
 
+# mark
 cc_library(
     name = "framework_lite",
     srcs = [
@@ -1150,11 +1215,13 @@ cc_library(
         "//tensorflow/core/platform:types.h",
         "//tensorflow/core/platform:cpu_info.h",
     ] + if_windows(["//tensorflow/core/platform:windows/integral_types.h"]),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     visibility = ["//visibility:public"],
     deps =
         [
             "@nsync//:nsync_cpp",
         ] + [
+             #":iRRAM_lib",
             "//third_party/eigen3",
             "//tensorflow/core/platform/default/build_config:minimal",
             "//tensorflow/core/platform:types",
@@ -1693,6 +1760,7 @@ cc_library(
         "//tensorflow/core/kernels:ops_testutil.h",
     ],
     copts = tf_copts(),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     visibility = ["//visibility:public"],
     deps = [
         ":core_cpu",
@@ -1700,6 +1768,7 @@ cc_library(
         ":core_cpu_lib",
         ":framework",
         ":framework_internal",
+        #":iRRAM_lib",
         ":lib",
         ":lib_internal",
         ":ops",
@@ -2482,8 +2551,10 @@ cc_library(
     ],
     hdrs = LIB_INTERNAL_PUBLIC_HEADERS,
     copts = tf_copts(),
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     defines = LIB_INTERNAL_DEFINES,
     deps = tf_additional_lib_deps() + [
+                #":iRRAM_lib",
                ":core_stringpiece",
                ":lib_hash_crc32c_accelerate_internal",
                ":lib_proto_parsing",

@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <limits>
 #include <utility>
+#include <iRRAM/lib.h>
 
 #include "tensorflow/core/framework/numeric_types.h"
 #include "tensorflow/core/platform/types.h"
@@ -68,7 +69,7 @@ struct is_simple_type {
   static constexpr bool value =
       std::is_trivial<T>::value || std::is_same<T, Eigen::half>::value ||
       std::is_same<T, complex64>::value || std::is_same<T, complex128>::value ||
-      is_quantized<T>::value || std::is_same<T, bfloat16>::value;
+      is_quantized<T>::value || std::is_same<T, bfloat16>::value || std::is_same<T, iRRAM::REAL>::value;
 };
 
 }  // namespace tensorflow

@@ -606,9 +606,11 @@ cc_library(
     name = "prefetch_autotuner",
     srcs = ["prefetch_autotuner.cc"],
     hdrs = ["prefetch_autotuner.h"],
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     deps = [
         "//tensorflow/core:framework_internal",
         "//tensorflow/core:lib",
+        #"//tensorflow/core:iRRAM_lib",
     ],
 )
 

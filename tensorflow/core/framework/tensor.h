@@ -18,6 +18,8 @@ limitations under the License.
 
 #include <cstdint>
 #include <type_traits>
+#include <iRRAM/lib.h>
+
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/framework/allocator.h"
 #include "tensorflow/core/framework/tensor_shape.h"
@@ -138,6 +140,8 @@ class Tensor {
       : Tensor(scalar_value, host_scalar_tag{}) {}
   explicit Tensor(double scalar_value)
       : Tensor(scalar_value, host_scalar_tag{}) {}
+  explicit Tensor(iRRAM::REAL scalar_value)
+      : Tensor(scalar_value, host_scalar_tag{}) {}      
   explicit Tensor(int32 scalar_value)
       : Tensor(scalar_value, host_scalar_tag{}) {}
   explicit Tensor(uint32 scalar_value)

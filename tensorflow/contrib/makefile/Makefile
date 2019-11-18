@@ -103,6 +103,9 @@ HOST_LIBS := \
 $(HOST_NSYNC_LIB) \
 -lstdc++ \
 -lprotobuf \
+-liRRAM \
+-lmpfr \
+-lgmp \
 -lpthread \
 -lm \
 -lz
@@ -185,7 +188,7 @@ ifneq ($(TARGET),ANDROID)
   OPTFLAGS += -march=native
 endif
 
-CXXFLAGS := --std=c++11 -DIS_SLIM_BUILD -fno-exceptions -DNDEBUG $(OPTFLAGS)
+CXXFLAGS := --std=c++11 -DIS_SLIM_BUILD -fexceptions -DNDEBUG $(OPTFLAGS)
 LDFLAGS := \
 -L/usr/local/lib
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
@@ -222,6 +225,9 @@ LIBS := \
 $(TARGET_NSYNC_LIB) \
 -lstdc++ \
 -lprotobuf \
+-liRRAM \
+-lmpfr \
+-lgmp \
 -lz \
 -lm
 
@@ -373,6 +379,9 @@ $(MARCH_OPTION) \
 $(TARGET_NSYNC_LIB) \
 -lgnustl_static \
 -lprotobuf \
+-liRRAM \
+-lmpfr \
+-lgmp \
 -llog \
 -lz \
 -lm \

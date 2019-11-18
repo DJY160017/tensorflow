@@ -27,6 +27,8 @@ limitations under the License.
 //   includes running the constructor and destructor of T[], encoding
 //   an decoding T[] into/from a Cord, etc.
 
+#include <iRRAM/lib.h>
+
 #include "tensorflow/core/framework/tensor.h"
 
 #include "absl/strings/escaping.h"
@@ -125,7 +127,7 @@ void LogUnexpectedSize(int64 actual, int64 expected) {
   LOG(ERROR) << "Input size was " << actual << " and expected " << expected;
 }
 
-// A set of helper functions depending on T.
+// A set of helper functions depending on T. real can use the operation like float
 template <typename T>
 struct Helper {
   // By default, we assume T is a simple type (float, int32, etc.)
@@ -271,6 +273,39 @@ struct Helper<Variant> {
   }
 };
 
+// TODO  设置REAL的串行化（String->REAL;;REAL->String）
+template <>
+struct Helper<iRRAM::REAL> {
+  // Encodes "n" elements of type Variant stored in "in" into destination
+  // "out", which is usually the TensorProto::tensor_content.
+  template <typename Destination>
+  static void Encode(TensorBuffer* in, int64 n, Destination* out) {
+    port::EncodeREALList(in->base<const iRRAM::REAL>(), n,
+                      port::NewStringListEncoder(out));
+  }
+
+  // Decodes "n" elements of type Variant from "in" and constructs a
+  // buffer out of it. Returns nullptr if the decoding fails. "in" is
+  // usually the TensorProto::tensor_content.
+  template <typename Source>
+  static TensorBuffer* Decode(Allocator* a, const Source& in, int64 n) {
+    auto* buf = new Buffer<iRRAM::REAL>(a, n);
+    iRRAM::REAL* ps = buf->template base<iRRAM::REAL>();
+    if (ps == nullptr ||
+        !port::DecodeREALList(port::NewStringListDecoder(in), ps, n)) {
+      buf->Unref();
+      return nullptr;
+    }
+    return buf;
+  }
+
+  // Returns the estimated memory usage of "n" elements of type T
+  // stored in buffer "in".
+  static int64 TotalBytes(TensorBuffer* in, int n) {
+    return n * sizeof(iRRAM::REAL);
+  }
+};
+
 template <typename T>
 struct ProtoHelper {};
 
@@ -307,6 +342,7 @@ PROTO_TRAITS(qint8, int32, int);
 PROTO_TRAITS(quint8, int32, int);
 PROTO_TRAITS(qint16, int32, int);
 PROTO_TRAITS(quint16, int32, int);
+//PROTO_TRAITS(REAL, REAL, REAL);
 #undef PROTO_TRAITS
 
 template <>
@@ -371,6 +407,27 @@ struct ProtoHelper<Variant> {
       VariantTensorData tmp;
       data[i].Encode(&tmp);
       tmp.ToProto(variant_values->Add());
+    }
+  }
+};
+
+template <>
+struct ProtoHelper<iRRAM::REAL> {
+  typedef Helper<string>::RepeatedFieldType FieldType;
+  static const iRRAM::REAL* Begin(const TensorProto& proto) {
+    return reinterpret_cast<const iRRAM::REAL*>(proto.real_val().data());
+  }
+  static size_t NumElements(const TensorProto& proto) {
+    return proto.real_val().size();
+  }
+  static void Fill(const iRRAM::REAL* data, size_t n, TensorProto* proto) {
+    auto* real_values = proto->mutable_real_val();
+    real_values->Clear();
+    const int p_length = 1000000;
+    for (size_t i = 0; i < n; ++i) {
+      std::string content = iRRAM::swrite(data[i], p_length);
+      std::string* ptr = real_values->Add();
+      *ptr = content;
     }
   }
 };
@@ -727,6 +784,7 @@ bool Tensor::RefCountIsOne() const {
     CASE(Eigen::half, SINGLE_ARG(STMTS))                       \
     CASE(ResourceHandle, SINGLE_ARG(STMTS))                    \
     CASE(Variant, SINGLE_ARG(STMTS))                           \
+    CASE(iRRAM::REAL, SINGLE_ARG(STMTS))                       \
     case DT_INVALID:                                           \
       INVALID;                                                 \
       break;                                                   \
@@ -1166,6 +1224,27 @@ string Tensor::SummarizeValue(int64 max_entries, bool print_v2) const {
     case DT_STRING:
       return SummarizeArray<string>(limit, num_elts, shape_, data, print_v2);
       break;
+    case DT_REAL:{
+      //return SummarizeArray<iRRAM::REAL>(limit, num_elts, shape_, data, print_v2);
+      string ret;
+      if (print_v2) {
+        strings::StrAppend(&ret, "[");
+      }
+      // loop.
+      const iRRAM::REAL* array = reinterpret_cast<const iRRAM::REAL*>(data);
+      const int p_length = 1000000;
+      for (size_t i = 0; i < limit; ++i) {
+        if (i > 0) strings::StrAppend(&ret, " ");
+        string content = iRRAM::swrite(array[i], p_length);
+        strings::StrAppend(&ret,content);
+      }
+      if (max_entries < num_elts) strings::StrAppend(&ret, "...");
+      if (print_v2) {
+        strings::StrAppend(&ret, "]");
+      }
+      return ret;
+      break;
+    }
     default: {
       // All irregular cases
       string ret;

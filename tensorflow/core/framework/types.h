@@ -19,6 +19,7 @@ limitations under the License.
 #include <map>
 #include <set>
 #include <string>
+#include <iRRAM/lib.h>
 
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 // Disable clang-format to prevent 'FixedPoint' header from being included
@@ -35,6 +36,7 @@ limitations under the License.
 #include "tensorflow/core/lib/gtl/inlined_vector.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/types.h"
+
 
 namespace tensorflow {
 
@@ -268,16 +270,17 @@ constexpr DataTypeSet kAllTypes =
     ToSet(DT_BOOL) | ToSet(DT_QINT8) | ToSet(DT_QUINT8) | ToSet(DT_QINT16) |
     ToSet(DT_QUINT16) | ToSet(DT_QINT32) | ToSet(DT_HALF) | ToSet(DT_RESOURCE) |
     ToSet(DT_VARIANT) | ToSet(DT_UINT32) | ToSet(DT_UINT64) |
-    ToSet(DT_BFLOAT16);
+    ToSet(DT_BFLOAT16)| ToSet(DT_REAL);
 inline const DataTypeSet& AllTypes() { return kAllTypes; }
 
 #if !defined(IS_MOBILE_PLATFORM) || defined(SUPPORT_SELECTIVE_REGISTRATION)
 
-// Types that support '<' and '>'.
+// Types that support '<' and '>'. TODO DT_REAL is support?
 constexpr DataTypeSet kRealNumberTypes =
     ToSet(DT_FLOAT) | ToSet(DT_DOUBLE) | ToSet(DT_INT32) | ToSet(DT_INT64) |
     ToSet(DT_UINT8) | ToSet(DT_INT16) | ToSet(DT_INT8) | ToSet(DT_UINT16) |
-    ToSet(DT_HALF) | ToSet(DT_UINT32) | ToSet(DT_UINT64) | ToSet(DT_BFLOAT16);
+    ToSet(DT_HALF) | ToSet(DT_UINT32) | ToSet(DT_UINT64) | ToSet(DT_BFLOAT16) |
+    ToSet(DT_REAL);
 inline const DataTypeSet RealNumberTypes() { return kRealNumberTypes; }
 
 // Return the list of all numeric types.
@@ -288,7 +291,7 @@ const DataTypeSet kNumberTypes =
     ToSet(DT_UINT8) | ToSet(DT_UINT16) | ToSet(DT_INT16) | ToSet(DT_INT8) |
     ToSet(DT_COMPLEX64) | ToSet(DT_COMPLEX128) | ToSet(DT_QINT8) |
     ToSet(DT_QUINT8) | ToSet(DT_QINT32) | ToSet(DT_HALF) | ToSet(DT_UINT32) |
-    ToSet(DT_UINT64) | ToSet(DT_BFLOAT16);
+    ToSet(DT_UINT64) | ToSet(DT_BFLOAT16)| ToSet(DT_REAL);
 inline const DataTypeSet& NumberTypes() { return kNumberTypes; }
 
 constexpr DataTypeSet kQuantizedTypes = ToSet(DT_QINT8) | ToSet(DT_QUINT8) |
@@ -301,11 +304,12 @@ const DataTypeSet kRealAndQuantizedTypes =
     ToSet(DT_FLOAT) | ToSet(DT_DOUBLE) | ToSet(DT_INT32) | ToSet(DT_INT64) |
     ToSet(DT_UINT8) | ToSet(DT_UINT16) | ToSet(DT_INT16) | ToSet(DT_INT8) |
     ToSet(DT_QINT8) | ToSet(DT_QUINT8) | ToSet(DT_QINT16) | ToSet(DT_QUINT16) |
-    ToSet(DT_QINT32) | ToSet(DT_HALF) | ToSet(DT_BFLOAT16);
+    ToSet(DT_QINT32) | ToSet(DT_HALF) | ToSet(DT_BFLOAT16)| ToSet(DT_REAL);
 inline const DataTypeSet& RealAndQuantizedTypes() {
   return kRealAndQuantizedTypes;
 }
 
+// android platform is not support now -- byrondong
 #elif defined(__ANDROID_TYPES_FULL__)
 
 constexpr DataTypeSet kRealNumberTypes =
@@ -328,6 +332,7 @@ constexpr DataTypeSet kRealAndQuantizedTypes =
     ToSet(DT_HALF);
 inline DataTypeSet RealAndQuantizedTypes() { return kRealAndQuantizedTypes; }
 
+// mobile platform is not support now -- byrondong
 #else  // defined(IS_MOBILE_PLATFORM) && !defined(__ANDROID_TYPES_FULL__)
 
 constexpr DataTypeSet kRealNumberTypes = ToSet(DT_FLOAT) | ToSet(DT_INT32);
@@ -406,6 +411,7 @@ MATCH_TYPE_AND_ENUM(bfloat16, DT_BFLOAT16);
 MATCH_TYPE_AND_ENUM(Eigen::half, DT_HALF);
 MATCH_TYPE_AND_ENUM(ResourceHandle, DT_RESOURCE);
 MATCH_TYPE_AND_ENUM(Variant, DT_VARIANT);
+MATCH_TYPE_AND_ENUM(iRRAM::REAL, DT_REAL);
 
 #undef MATCH_TYPE_AND_ENUM
 
@@ -427,14 +433,14 @@ constexpr DataTypeSet kDataTypesCanUseMemcpy =
     ToSet(DT_COMPLEX64) | ToSet(DT_COMPLEX128) | ToSet(DT_INT64) |
     ToSet(DT_UINT64) | ToSet(DT_BOOL) | ToSet(DT_QINT8) | ToSet(DT_QUINT8) |
     ToSet(DT_QINT16) | ToSet(DT_QUINT16) | ToSet(DT_QINT32) |
-    ToSet(DT_BFLOAT16) | ToSet(DT_HALF);
+    ToSet(DT_BFLOAT16) | ToSet(DT_HALF)| ToSet(DT_REAL);
 inline bool DataTypeCanUseMemcpy(DataType dt) {
   return kDataTypesCanUseMemcpy.Contains(dt);
 }
 
 // Returns true iff 'dt' is a real, non-quantized floating point type.
 constexpr DataTypeSet kDataTypeIsFloating =
-    ToSet(DT_HALF) | ToSet(DT_BFLOAT16) | ToSet(DT_FLOAT) | ToSet(DT_DOUBLE);
+    ToSet(DT_HALF) | ToSet(DT_BFLOAT16) | ToSet(DT_FLOAT) | ToSet(DT_DOUBLE) | ToSet(DT_REAL);
 inline bool DataTypeIsFloating(DataType dt) {
   return kDataTypeIsFloating.Contains(dt);
 }

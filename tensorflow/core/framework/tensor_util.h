@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <algorithm>
 #include <vector>
+#include <iRRAM/lib.h>
 
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor.pb.h"
@@ -113,6 +114,7 @@ DEFINE_PROTO_FIELD_HELPER(Eigen::half, half);
 DEFINE_PROTO_FIELD_HELPER(bfloat16, half);
 DEFINE_PROTO_FIELD_HELPER(complex64, scomplex);
 DEFINE_PROTO_FIELD_HELPER(complex128, dcomplex);
+//DEFINE_PROTO_FIELD_HELPER(iRRAM::REAL, real);
 
 #undef DEFINE_PROTO_HELPER
 
@@ -254,6 +256,29 @@ class TensorProtoHelper<string> : public std::true_type {
   static DataType GetDataType() { return DataType::DT_STRING; }
   static void AddValue(const string& value, TensorProto* proto) {
     *proto->mutable_string_val()->Add() = value;
+  }
+  template <typename IterType>
+  static void AddValues(IterType begin, IterType end, TensorProto* proto) {
+    for (IterType it = begin; it != end; ++it) {
+      AddValue(*it, proto);
+    }
+  }
+  template <typename IterType>
+  static void CopyToTensorContent(IterType begin, IterType end,
+                                  TensorProto* proto) {
+    AddValues(begin, end, proto);
+  }
+};
+
+// Specialization for iRRAM::REAL.
+template <>
+class TensorProtoHelper<iRRAM::REAL> : public std::true_type {
+ public:
+  static DataType GetDataType() { return DataType::DT_REAL; }
+  static void AddValue(const iRRAM::REAL& value, TensorProto* proto) {
+    const int p_length = 1000000;
+    std::string content = iRRAM::swrite(value, p_length);
+    *proto->mutable_string_val()->Add() = content;
   }
   template <typename IterType>
   static void AddValues(IterType begin, IterType end, TensorProto* proto) {

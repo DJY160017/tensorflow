@@ -18,6 +18,8 @@ limitations under the License.
 #define TENSORFLOW_PLATFORM_TENSOR_CODING_H_
 
 #include <string>
+#include <iRRAM/lib.h>
+
 #include "tensorflow/core/lib/core/refcount.h"
 #include "tensorflow/core/lib/core/stringpiece.h"
 #include "tensorflow/core/platform/platform.h"
@@ -94,6 +96,10 @@ class StringListDecoder {
 
 std::unique_ptr<StringListEncoder> NewStringListEncoder(string* out);
 std::unique_ptr<StringListDecoder> NewStringListDecoder(const string& in);
+
+void EncodeREALList(const iRRAM::REAL* p, int64 n, std::unique_ptr<StringListEncoder> e);
+
+bool DecodeREALList(std::unique_ptr<StringListDecoder> d, iRRAM::REAL* ps, int64 n);
 
 #if defined(TENSORFLOW_PROTOBUF_USES_CORD)
 // Store src contents in *out.  If backing memory for src is shared with *out,

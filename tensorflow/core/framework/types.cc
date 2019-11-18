@@ -100,6 +100,8 @@ string DataTypeStringInternal(DataType dtype) {
       return "resource";
     case DT_VARIANT:
       return "variant";
+    case DT_REAL:
+      return "real";
     default:
       LOG(ERROR) << "Unrecognized DataType enum value " << dtype;
       return strings::StrCat("unknown dtype enum (", dtype, ")");
@@ -195,6 +197,9 @@ bool DataTypeFromString(StringPiece sp, DataType* dt) {
     return true;
   } else if (sp == "variant") {
     *dt = DT_VARIANT;
+    return true;
+ } else if (sp == "real") {
+    *dt = DT_REAL;
     return true;
   }
   return false;

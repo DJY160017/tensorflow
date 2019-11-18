@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/core/platform/tensor_coding.h"
 
 #include <vector>
+#include <iRRAM/lib.h>
 
 #include "tensorflow/core/lib/core/coding.h"
 #include "tensorflow/core/lib/core/stringpiece.h"
@@ -129,6 +130,28 @@ std::unique_ptr<StringListEncoder> NewStringListEncoder(string* out) {
 
 std::unique_ptr<StringListDecoder> NewStringListDecoder(const string& in) {
   return std::unique_ptr<StringListDecoder>(new StringListDecoderImpl(in));
+}
+
+void EncodeREALList(const iRRAM::REAL* p, int64 n,
+                              std::unique_ptr<StringListEncoder> e) {
+  const int p_length = 1000000;
+  for (int i = 0; i < n; ++i) {
+    std::string real_str = iRRAM::swrite(p[i], p_length);
+    e->Append(real_str);
+  }
+  e->Finalize();
+}
+
+bool DecodeREALList(std::unique_ptr<StringListDecoder> d,
+                              iRRAM::REAL* ps, int64 n) {
+  std::vector<uint32> sizes(n);
+  if (!d->ReadSizes(&sizes)) return false;
+
+  for (int i = 0; i < n; ++i) {
+     std::string str(d->Data(sizes[i]), sizes[i]);
+     ps[i] = iRRAM::REAL(std::move(str));
+  }
+  return true;
 }
 
 #if defined(TENSORFLOW_PROTOBUF_USES_CORD)

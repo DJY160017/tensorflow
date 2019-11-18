@@ -285,7 +285,8 @@ def tf_copts(android_optimization_level_override = "-O2", is_external = False):
             "-DEIGEN_AVOID_STL_ARRAY",
             "-Iexternal/gemmlowp",
             "-Wno-sign-compare",
-            "-fno-exceptions",
+             # TODO -fno-exceptions modify to -fexceptions
+            "-fexceptions", 
             "-ftemplate-depth=900",
         ]) +
         if_cuda(["-DGOOGLE_CUDA=1"]) +

@@ -167,6 +167,7 @@ cc_library(
     hdrs = [
         "tensor_coding.h",
     ],
+    linkopts = ["-L/usr/local/lib -liRRAM -lmpfr -lgmp -lm -lpthread"],
     deps = [
         "//tensorflow/core:core_cpu_internal",
         "//tensorflow/core:framework",
