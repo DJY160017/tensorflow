@@ -910,7 +910,7 @@ REGISTER_OP("MatMul")
     .Attr("transpose_b: bool = false")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128, iRRAM::REAL}")
+        "complex128, real}")
     .SetShapeFn(shape_inference::MatMulShape);
 
 #ifdef INTEL_MKL
