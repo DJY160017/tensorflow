@@ -14,6 +14,7 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/kernels/fill_functor.h"
+#include <iRRAM/lib.h>
 
 #define EIGEN_USE_THREADS
 
@@ -59,6 +60,7 @@ DEFINE_SETZERO_CPU(qint32);
 DEFINE_SETZERO_CPU(complex64);
 DEFINE_SETZERO_CPU(complex128);
 DEFINE_SETZERO_CPU(Variant);
+DEFINE_SETZERO_CPU(iRRAM::REAL);
 #undef DEFINE_SETZERO_CPU
 
 #ifdef TENSORFLOW_USE_SYCL
@@ -104,6 +106,7 @@ DEFINE_SETONE_CPU(int32);
 DEFINE_SETONE_CPU(int64);
 DEFINE_SETONE_CPU(complex64);
 DEFINE_SETONE_CPU(complex128);
+DEFINE_SETONE_CPU(iRRAM::REAL);
 #undef DEFINE_SETONE_CPU
 
 #ifdef TENSORFLOW_USE_SYCL

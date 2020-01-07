@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "tensorflow/cc/ops/const_op.h"
 #include "tensorflow/core/framework/types.h"
+#include <iostream>
 
 namespace tensorflow {
 namespace ops {
@@ -22,6 +23,7 @@ namespace ops {
 namespace {
 template <typename T>
 Output ConstHelper(const Scope& scope, const T& value, DataType dtype) {
+  std::cout<<"Const_op.cc: ConstHelper init"<<std::endl;
   if (!scope.ok()) return Output();
 
   Node* ret;
@@ -42,6 +44,7 @@ Output ConstHelper(const Scope& scope, const T& value, DataType dtype) {
 }  // namespace
 
 Output Const(const Scope& scope, const Input::Initializer& val) {
+  std::cout<<"Const_op.cc: Const init"<<std::endl;
   if (!val.status.ok()) {
     scope.UpdateStatus(val.status);
     return Output();

@@ -21,6 +21,7 @@ limitations under the License.
 #include "tensorflow/core/framework/resource_handle.h"
 #include "tensorflow/core/framework/variant.h"
 #include "tensorflow/core/platform/types.h"
+#include <iRRAM/lib.h>
 
 // Two sets of macros:
 // - TF_CALL_float, TF_CALL_double, etc. which call the given macro with
@@ -86,6 +87,8 @@ limitations under the License.
 #define TF_CALL_complex128(m) m(::tensorflow::complex128)
 #define TF_CALL_half(m) m(Eigen::half)
 
+#define TF_CALL_REAL(m) m(iRRAM::REAL)
+
 #elif defined(__ANDROID_TYPES_FULL__)
 
 // Only string, half, float, int32, int64, bool, and quantized types
@@ -117,6 +120,7 @@ limitations under the License.
 #define TF_CALL_complex128(m)
 #define TF_CALL_half(m) m(Eigen::half)
 
+#define TF_CALL_REAL(m)
 #else  // defined(IS_MOBILE_PLATFORM) && !defined(__ANDROID_TYPES_FULL__)
 
 // Only float, int32, and bool are supported.
@@ -147,6 +151,7 @@ limitations under the License.
 #define TF_CALL_complex128(m)
 #define TF_CALL_half(m)
 
+#define TF_CALL_REAL(m)
 #endif  // defined(IS_MOBILE_PLATFORM)  - end of TF_CALL_type defines
 
 // Defines for sets of types.
@@ -178,7 +183,7 @@ limitations under the License.
 
 // Call "m" for all number types, including complex64 and complex128.
 #define TF_CALL_NUMBER_TYPES(m) \
-  TF_CALL_REAL_NUMBER_TYPES(m) TF_CALL_complex64(m) TF_CALL_complex128(m)
+  TF_CALL_REAL_NUMBER_TYPES(m) TF_CALL_complex64(m) TF_CALL_complex128(m) //TF_CALL_REAL(m)
 
 #define TF_CALL_NUMBER_TYPES_NO_INT32(m) \
   TF_CALL_REAL_NUMBER_TYPES_NO_INT32(m)  \
@@ -188,7 +193,7 @@ limitations under the License.
 
 // Call "m" on all types.
 #define TF_CALL_ALL_TYPES(m) \
-  TF_CALL_POD_TYPES(m) TF_CALL_string(m) TF_CALL_resource(m) TF_CALL_variant(m)
+  TF_CALL_POD_TYPES(m) TF_CALL_string(m) TF_CALL_resource(m) TF_CALL_variant(m) TF_CALL_REAL(m)
 
 // Call "m" on POD and string types.
 #define TF_CALL_POD_STRING_TYPES(m) TF_CALL_POD_TYPES(m) TF_CALL_string(m)
@@ -214,7 +219,7 @@ limitations under the License.
   TF_CALL_INTEGRAL_TYPES(m)                                               \
   TF_CALL_half(m) TF_CALL_float(m) TF_CALL_double(m) TF_CALL_complex64(m) \
       TF_CALL_complex128(m) TF_CALL_bool(m) TF_CALL_string(m)             \
-          TF_CALL_QUANTIZED_TYPES(m)
+          TF_CALL_QUANTIZED_TYPES(m) //TF_CALL_REAL(m)
 
 #ifdef TENSORFLOW_SYCL_NO_DOUBLE
 #define TF_CALL_SYCL_double(m)

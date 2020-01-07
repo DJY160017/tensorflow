@@ -18,6 +18,7 @@ limitations under the License.
 #include <atomic>
 #include <string>
 #include <vector>
+#include <iostream>
 
 #include "absl/container/flat_hash_set.h"
 #include "tensorflow/core/common_runtime/collective_executor_mgr.h"
@@ -453,6 +454,7 @@ Status DirectSession::Run(const NamedTensorList& inputs,
                           const std::vector<string>& target_nodes,
                           std::vector<Tensor>* outputs) {
   RunMetadata run_metadata;
+  std::cout<<"direct_session: run 1"<<std::endl;
   return Run(RunOptions(), inputs, output_names, target_nodes, outputs,
              &run_metadata);
 }
@@ -492,6 +494,7 @@ Status DirectSession::RunInternal(
     CallFrameInterface* call_frame, ExecutorsAndKeys* executors_and_keys,
     RunMetadata* run_metadata,
     const thread::ThreadPoolOptions& threadpool_options) {
+  std::cout<<"direct_session: run internal"<<std::endl; 
   const uint64 start_time_usecs = options_.env->NowMicros();
   const int64 executor_step_count = executors_and_keys->step_count.fetch_add(1);
   RunState run_state(step_id, &devices_);
@@ -755,6 +758,7 @@ Status DirectSession::RunInternal(
   }
   metrics::UpdateGraphExecTime(options_.env->NowMicros() - start_time_usecs);
 
+  std::cout<<"direct_session: run internal end"<<std::endl;
   return Status::OK();
 }
 
@@ -764,8 +768,9 @@ Status DirectSession::Run(const RunOptions& run_options,
                           const std::vector<string>& target_nodes,
                           std::vector<Tensor>* outputs,
                           RunMetadata* run_metadata) {
+  std::cout<<"direct_session: run 2"<<std::endl;   
   TF_RETURN_IF_ERROR(CheckNotClosed());
-  TF_RETURN_IF_ERROR(CheckGraphCreated("Run()"));
+  TF_RETURN_IF_ERROR(CheckGraphCreated("Run()")); 
   direct_session_runs->GetCell()->IncrementBy(1);
 
   // Extract the inputs names for this run of the session.
@@ -867,7 +872,7 @@ Status DirectSession::Run(const RunOptions& run_options,
     }
     metrics::RecordGraphOutputTensors(output_size);
   }
-
+  std::cout<<"direct_session: run 2 end"<<std::endl;  
   return Status::OK();
 }
 
@@ -875,6 +880,7 @@ Status DirectSession::PRunSetup(const std::vector<string>& input_names,
                                 const std::vector<string>& output_names,
                                 const std::vector<string>& target_nodes,
                                 string* handle) {
+  std::cout<<"direct_session: PRunSetup"<<std::endl;                               
   TF_RETURN_IF_ERROR(CheckNotClosed());
   TF_RETURN_IF_ERROR(CheckGraphCreated("PRunSetup()"));
 
@@ -947,12 +953,14 @@ Status DirectSession::PRunSetup(const std::vector<string>& input_names,
   }
 
   *handle = run_state_args.handle;
+  std::cout<<"direct_session: PRunSetup end"<<std::endl;  
   return Status::OK();
 }
 
 Status DirectSession::PRun(const string& handle, const NamedTensorList& inputs,
                            const std::vector<string>& output_names,
                            std::vector<Tensor>* outputs) {
+  std::cout<<"direct_session: PRun"<<std::endl;                             
   TF_RETURN_IF_ERROR(CheckNotClosed());
   std::vector<string> parts = str_util::Split(handle, ';');
   const string& key = parts[0];
@@ -1046,7 +1054,7 @@ Status DirectSession::PRun(const string& handle, const NamedTensorList& inputs,
       partial_runs_.erase(handle);
     }
   }
-
+  std::cout<<"direct_session: PRunSetup end"<<std::endl;
   return s;
 }
 

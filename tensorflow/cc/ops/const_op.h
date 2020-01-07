@@ -19,6 +19,7 @@ limitations under the License.
 #include "tensorflow/cc/framework/ops.h"
 #include "tensorflow/cc/framework/scope.h"
 #include "tensorflow/core/graph/node_builder.h"
+#include <iostream>
 
 namespace tensorflow {
 namespace ops {
@@ -34,6 +35,7 @@ NodeBuilder::NodeOut AsNodeOut(const Scope& scope, const Input& inp);
 
 template <typename T>
 Output Const(const Scope& scope, const Input::Initializer& val) {
+  std::cout<<"Const_Op: init const 1"<<std::endl;
   auto orig_const_output = Const(scope, val);
   if (!scope.ok()) return Output();
 
@@ -60,6 +62,7 @@ Output Const(const Scope& scope, const Input::Initializer& val) {
   scope.UpdateStatus(cast_builder.Finalize(scope.graph(), &ret));
   if (!scope.ok()) return Output();
   scope.UpdateStatus(scope.DoShapeInference(ret));
+  std::cout<<"Const_Op: init const 1 end"<<std::endl;
   return Output(ret, 0);
 }
 

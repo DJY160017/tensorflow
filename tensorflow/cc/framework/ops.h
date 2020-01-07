@@ -17,12 +17,16 @@ limitations under the License.
 #define TENSORFLOW_CC_FRAMEWORK_OPS_H_
 
 #include <type_traits>
+#include <iRRAM/lib.h>
+#include <iostream>
 
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor.pb.h"
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/lib/hash/hash.h"
 #include "tensorflow/core/lib/strings/strcat.h"
+
+
 
 namespace tensorflow {
 
@@ -106,9 +110,11 @@ class Input {
     /// Construct from a scalar value of an arithmetic type or a type that can
     /// be converted to a string (eg. a string literal).
     template <typename T, typename = typename std::enable_if<
+                              std::is_same<T, iRRAM::REAL>::value || // make real type can be recongize
                               std::is_arithmetic<T>::value ||
                               std::is_convertible<T, string>::value>::type>
     Initializer(const T& v) {  // NOLINT(runtime/explicit)
+      std::cout<<"Input::Initializer run 1"<<std::endl;
       typedef typename RealType<T>::type RealT;
       Tensor t(DataTypeToEnum<RealT>::v(), TensorShape());
       t.flat<T>()(0) = RealT(v);
@@ -119,9 +125,11 @@ class Input {
 
     /// Construct from a scalar value and an explicit shape
     template <typename T, typename = typename std::enable_if<
+                              std::is_same<T, iRRAM::REAL>::value || // make real type can be recongize
                               std::is_arithmetic<T>::value ||
                               std::is_convertible<T, string>::value>::type>
     Initializer(const T& v, const TensorShape& shape) {
+      std::cout<<"Input::Initializer run 2"<<std::endl;
       typedef typename RealType<T>::type RealT;
       Tensor t(DataTypeToEnum<RealT>::v(), shape);
       for (int64 i = 0; i < t.NumElements(); ++i) {
@@ -132,22 +140,30 @@ class Input {
 
     /// Construct from a initializer list of scalars (a one-dimensional tensor).
     template <typename T, typename = typename std::enable_if<
+                              std::is_same<T, iRRAM::REAL>::value || // make real type can be recongize
                               std::is_arithmetic<T>::value ||
                               std::is_convertible<T, string>::value>::type>
     Initializer(
         const std::initializer_list<T>& v) {  // NOLINT(runtime/explicit)
+      std::cout<<"Input::Initializer run 3"<<std::endl;
       typedef typename RealType<T>::type RealT;
+      std::cout<<"Input::Initializer run 3->type map success"<<std::endl;
       Tensor t(DataTypeToEnum<RealT>::v(),
                TensorShape{static_cast<int>(v.size())});
+      std::cout<<"Input::Initializer run 3->construct tensor success"<<std::endl;
+
       std::copy_n(v.begin(), v.size(), t.flat<RealT>().data());
+      std::cout<<"Input::Initializer run 3->copy all success"<<std::endl;
       tensor = t;
     }
 
     /// Construct from a initializer list of scalars and an explicit shape.
     template <typename T, typename = typename std::enable_if<
+                              std::is_same<T, iRRAM::REAL>::value || // make real type can be recongize
                               std::is_arithmetic<T>::value ||
                               std::is_convertible<T, string>::value>::type>
     Initializer(const std::initializer_list<T>& v, const TensorShape& shape) {
+      std::cout<<"Input::Initializer run 4"<<std::endl;
       typedef typename RealType<T>::type RealT;
       Tensor t(DataTypeToEnum<RealT>::v(), shape);
       if (t.NumElements() != static_cast<int64>(v.size())) {
@@ -219,6 +235,7 @@ class Input {
 
   Input(const std::initializer_list<Initializer>&
             init) {  // NOLINT(runtime/explicit)
+    std::cout<<"Input::Initializer run 5"<<std::endl;
     for (const auto& i : init) {
       if (!i.status.ok()) {
         status_ = i.status;

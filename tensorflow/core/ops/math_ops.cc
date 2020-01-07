@@ -17,6 +17,7 @@ limitations under the License.
 #include "tensorflow/core/framework/numeric_op.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/shape_inference.h"
+#include <iRRAM/lib.h>
 
 namespace tensorflow {
 
@@ -121,7 +122,7 @@ REGISTER_OP("BatchMatMul")
     .Output("output: T")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128}")
+        "complex128, real}")
     .Attr("adj_x: bool = false")
     .Attr("adj_y: bool = false")
     .SetShapeFn(shape_inference::BatchMatMulShape);
@@ -132,7 +133,7 @@ REGISTER_OP("BatchMatMulV2")
     .Output("output: T")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128}")
+        "complex128, real}")
     .Attr("adj_x: bool = false")
     .Attr("adj_y: bool = false")
     .SetShapeFn(shape_inference::BatchMatMulV2Shape);
@@ -144,7 +145,7 @@ REGISTER_OP("_MklBatchMatMul")
     .Output("output: T")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128}")
+        "complex128, real}")
     .Attr("adj_x: bool = false")
     .Attr("adj_y: bool = false")
     .SetShapeFn(shape_inference::BatchMatMulShape);
@@ -155,7 +156,7 @@ REGISTER_OP("_MklBatchMatMulV2")
     .Output("output: T")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128}")
+        "complex128, real}")
     .Attr("adj_x: bool = false")
     .Attr("adj_y: bool = false")
     .SetShapeFn(shape_inference::BatchMatMulV2Shape);
@@ -909,7 +910,7 @@ REGISTER_OP("MatMul")
     .Attr("transpose_b: bool = false")
     .Attr(
         "T: {bfloat16, half, float, double, int32, int64, complex64, "
-        "complex128}")
+        "complex128, iRRAM::REAL}")
     .SetShapeFn(shape_inference::MatMulShape);
 
 #ifdef INTEL_MKL
