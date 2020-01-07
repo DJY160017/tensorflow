@@ -18,6 +18,7 @@ limitations under the License.
 #include "tensorflow/core/framework/register_types.h"
 #include "tensorflow/core/framework/types.h"
 #include "tensorflow/core/lib/core/errors.h"
+#include <iRRAM/lib.h>
 
 #define TF_CALL_DATASET_TYPES(m) TF_CALL_ALL_TYPES(m) TF_CALL_QUANTIZED_TYPES(m)
 
@@ -51,6 +52,19 @@ Status HandleElementToSlice(T* src, T* dest, int64 num_values,
 
 template <>
 Status HandleElementToSlice<string>(string* src, string* dest, int64 num_values,
+                                    bool can_move) {
+  if (can_move) {
+    for (int64 i = 0; i < num_values; ++i) {
+      *dest++ = std::move(*src++);
+    }
+  } else {
+    std::copy_n(src, num_values, dest);
+  }
+  return Status::OK();
+}
+
+template <>
+Status HandleElementToSlice<iRRAM::REAL>(iRRAM::REAL* src, iRRAM::REAL* dest, int64 num_values,
                                     bool can_move) {
   if (can_move) {
     for (int64 i = 0; i < num_values; ++i) {
