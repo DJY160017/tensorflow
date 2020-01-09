@@ -19,6 +19,7 @@ limitations under the License.
 
 #include "tensorflow/core/kernels/matmul_op.h"
 #include <iRRAM/lib.h>
+#include <iostream>
 
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/op_kernel.h"
@@ -443,6 +444,7 @@ class MatMulOp : public OpKernel {
  public:
   explicit MatMulOp(OpKernelConstruction* ctx)
       : OpKernel(ctx), algorithms_set_already_(false) {
+	std::cout<<"matmul_op: MatMulOp enter"<<std::endl;
     OP_REQUIRES_OK(ctx, ctx->GetAttr("transpose_a", &transpose_a_));
     OP_REQUIRES_OK(ctx, ctx->GetAttr("transpose_b", &transpose_b_));
 
@@ -452,6 +454,7 @@ class MatMulOp : public OpKernel {
   }
 
   void Compute(OpKernelContext* ctx) override {
+	std::cout<<"matmul_op: Compute"<<std::endl;
     const Tensor& a = ctx->input(0);
     const Tensor& b = ctx->input(1);
 
@@ -589,7 +592,7 @@ TF_CALL_int32(REGISTER_CPU);
 TF_CALL_int64(REGISTER_CPU);
 TF_CALL_complex64(REGISTER_CPU);
 TF_CALL_complex128(REGISTER_CPU);
-//TF_CALL_REAL(REGISTER_CPU);
+TF_CALL_REAL(REGISTER_CPU);
 
 #if GOOGLE_CUDA || TENSORFLOW_USE_ROCM
 TF_CALL_float(REGISTER_GPU);

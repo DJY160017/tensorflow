@@ -773,6 +773,7 @@ Status DirectSession::Run(const RunOptions& run_options,
   TF_RETURN_IF_ERROR(CheckGraphCreated("Run()")); 
   direct_session_runs->GetCell()->IncrementBy(1);
 
+  std::cout<<"direct_session: run 2 breakpointer 1"<<std::endl;
   // Extract the inputs names for this run of the session.
   std::vector<string> input_tensor_names;
   input_tensor_names.reserve(inputs.size());
@@ -783,19 +784,23 @@ Status DirectSession::Run(const RunOptions& run_options,
   }
   metrics::RecordGraphInputTensors(input_size);
 
+  std::cout<<"direct_session: run 2 breakpointer 2"<<std::endl;
   // Check if we already have an executor for these arguments.
   ExecutorsAndKeys* executors_and_keys;
   RunStateArgs run_state_args(run_options.debug_options());
   run_state_args.collective_graph_key =
       run_options.experimental().collective_graph_key();
 
+  std::cout<<"direct_session: run 2 breakpointer 2.1"<<std::endl;
   TF_RETURN_IF_ERROR(GetOrCreateExecutors(input_tensor_names, output_names,
                                           target_nodes, &executors_and_keys,
                                           &run_state_args));
+  std::cout<<"direct_session: run 2 breakpointer 2.2"<<std::endl;
   {
     mutex_lock l(collective_graph_key_lock_);
     collective_graph_key_ = executors_and_keys->collective_graph_key;
   }
+  std::cout<<"direct_session: run 2 breakpointer 3"<<std::endl;
 
   // Configure a call frame for the step, which we use to feed and
   // fetch values to and from the executors.
@@ -819,7 +824,8 @@ Status DirectSession::Run(const RunOptions& run_options,
   } else if (!s.ok()) {
     return s;
   }
-
+  
+  std::cout<<"direct_session: run 2 breakpointer 4"<<std::endl;
   const int64 step_id = step_id_counter_.fetch_add(1);
 
   if (LogMemory::IsEnabled()) {
@@ -829,7 +835,7 @@ Status DirectSession::Run(const RunOptions& run_options,
   TF_RETURN_IF_ERROR(RunInternal(step_id, run_options, &call_frame,
                                  executors_and_keys, run_metadata,
                                  thread::ThreadPoolOptions()));
-
+  std::cout<<"direct_session: run 2 breakpointer 5"<<std::endl;
   // Receive outputs.
   if (outputs) {
     std::vector<Tensor> sorted_outputs;
@@ -856,6 +862,8 @@ Status DirectSession::Run(const RunOptions& run_options,
         }
       }
     }
+
+    std::cout<<"direct_session: run 2 breakpointer 6"<<std::endl;
     outputs->clear();
     size_t output_size = 0;
     outputs->reserve(sorted_outputs.size());
@@ -1235,6 +1243,7 @@ Status DirectSession::CreateExecutors(
     std::unique_ptr<ExecutorsAndKeys>* out_executors_and_keys,
     std::unique_ptr<FunctionInfo>* out_func_info,
     RunStateArgs* run_state_args) {
+	std::cout<<"direct_session: CreateExecutors enter"<<std::endl;
   BuildGraphOptions options;
   options.callable_options = callable_options;
   options.use_function_convention = !run_state_args->is_partial_run;
@@ -1253,10 +1262,11 @@ Status DirectSession::CreateExecutors(
   ek->callable_options = callable_options;
 
   std::unordered_map<string, std::unique_ptr<Graph>> graphs;
+	std::cout<<"direct_session: CreateExecutors CreateGraphs start"<<std::endl;
   TF_RETURN_IF_ERROR(CreateGraphs(
       options, &graphs, &func_info->flib_def, run_state_args, &ek->input_types,
       &ek->output_types, &ek->collective_graph_key));
-
+	std::cout<<"direct_session: CreateExecutors CreateGraphs end"<<std::endl;
   if (run_state_args->is_partial_run) {
     ek->graph = std::move(run_state_args->graph);
     std::unordered_set<StringPiece, StringPieceHasher> names;
@@ -1290,8 +1300,9 @@ Status DirectSession::CreateExecutors(
     std::unique_ptr<Graph>& partition_graph = iter->second;
 
     Device* device;
+	std::cout<<"direct_session: CreateExecutors lookup device start"<<std::endl;
     TF_RETURN_IF_ERROR(device_mgr_->LookupDevice(partition_name, &device));
-
+	std::cout<<"direct_session: CreateExecutors lookup device end"<<std::endl;
     ek->items.resize(ek->items.size() + 1);
     auto* item = &(ek->items.back());
     auto lib = func_info->proc_flr->GetFLR(partition_name);
@@ -1314,15 +1325,19 @@ Status DirectSession::CreateExecutors(
       // using `CallOp`) between subgraphs, because `CallOp::handle_`
       // is tied to a particular subgraph. Even if the function itself
       // is stateful, the `CallOp` that invokes it is not.
+      std::cout<<"direct_session: createKernel call back enter"<<std::endl;
       if (!OpSegment::ShouldOwnKernel(lib, ndef.op())) {
+		std::cout<<"direct_session: createKernel call back ShouldOwnKernel false"<<std::endl;
         return lib->CreateKernel(ndef, kernel);
       }
       auto create_fn = [lib, &ndef](OpKernel** kernel) {
+	std::cout<<"direct_session: createKernel call back real"<<std::endl;
         return lib->CreateKernel(ndef, kernel);
       };
       // Kernels created for subgraph nodes need to be cached.  On
       // cache miss, create_fn() is invoked to create a kernel based
       // on the function library here + global op registry.
+	std::cout<<"direct_session: createKernel call back end"<<std::endl;
       return opseg->FindOrCreate(session_handle_, ndef.name(), kernel,
                                  create_fn);
     };
@@ -1343,20 +1358,26 @@ Status DirectSession::CreateExecutors(
     const DebugOptions& debug_options =
         options.callable_options.run_options().debug_options();
     if (!debug_options.debug_tensor_watch_opts().empty()) {
+	std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug start"<<std::endl;
       TF_RETURN_IF_ERROR(DecorateAndPublishGraphForDebug(
           debug_options, partition_graph.get(), params.device));
+	std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug end"<<std::endl;
     }
 
+	std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes start"<<std::endl;
     TF_RETURN_IF_ERROR(EnsureMemoryTypes(DeviceType(device->device_type()),
                                          device->name(),
                                          partition_graph.get()));
+	std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes end"<<std::endl;
     // NewLocalExecutor takes ownership of partition_graph.
     item->graph = partition_graph.get();
     item->executor = nullptr;
     item->device = device;
     auto executor_type = options_.config.experimental().executor_type();
+	std::cout<<"direct_session: CreateExecutors NewExecutor start"<<std::endl;
     TF_RETURN_IF_ERROR(NewExecutor(
         executor_type, params, std::move(partition_graph), &item->executor));
+	std::cout<<"direct_session: CreateExecutors NewExecutor end"<<std::endl;
   }
 
   // Cache the mapping from input/output names to graph elements to
@@ -1394,6 +1415,8 @@ Status DirectSession::CreateExecutors(
 
   *out_executors_and_keys = std::move(ek);
   *out_func_info = std::move(func_info);
+
+	std::cout<<"direct_session: CreateExecutors end"<<std::endl;
   return Status::OK();
 }
 
@@ -1401,6 +1424,7 @@ Status DirectSession::GetOrCreateExecutors(
     gtl::ArraySlice<string> inputs, gtl::ArraySlice<string> outputs,
     gtl::ArraySlice<string> target_nodes, ExecutorsAndKeys** executors_and_keys,
     RunStateArgs* run_state_args) {
+	std::cout<<"direct_session: GetOrCreateExecutors enter"<<std::endl;
   int64 handle_name_counter_value = -1;
   if (LogMemory::IsEnabled() || run_state_args->is_partial_run) {
     handle_name_counter_value = handle_name_counter_.fetch_add(1);
@@ -1411,7 +1435,8 @@ Status DirectSession::GetOrCreateExecutors(
     debug_tensor_watches_summary = SummarizeDebugTensorWatches(
         run_state_args->debug_options.debug_tensor_watch_opts());
   }
-
+  
+	std::cout<<"direct_session: GetOrCreateExecutors init args end"<<std::endl;
   // Fast lookup path, no sorting.
   const string key = strings::StrCat(
       absl::StrJoin(inputs, ","), "->", absl::StrJoin(outputs, ","), "/",
@@ -1432,7 +1457,7 @@ Status DirectSession::GetOrCreateExecutors(
       return Status::OK();
     }
   }
-
+	std::cout<<"direct_session: GetOrCreateExecutors lookup path cat end"<<std::endl;
   // Slow lookup path, the unsorted key missed the cache.
   // Sort the inputs and outputs, and look up with the sorted key in case an
   // earlier call used a different order of inputs and outputs.
@@ -1467,7 +1492,7 @@ Status DirectSession::GetOrCreateExecutors(
       return Status::OK();
     }
   }
-
+  std::cout<<"direct_session: GetOrCreateExecutors find existed executor end"<<std::endl;
   // Nothing found, so create the executors and store in the cache.
   // The executor_lock_ is intentionally released while executors are
   // being created.
@@ -1488,9 +1513,10 @@ Status DirectSession::GetOrCreateExecutors(
       ->set_collective_graph_key(run_state_args->collective_graph_key);
   std::unique_ptr<ExecutorsAndKeys> ek;
   std::unique_ptr<FunctionInfo> func_info;
+	std::cout<<"direct_session: GetOrCreateExecutors create executor start"<<std::endl;
   TF_RETURN_IF_ERROR(
       CreateExecutors(callable_options, &ek, &func_info, run_state_args));
-
+	std::cout<<"direct_session: GetOrCreateExecutors create executor is success"<<std::endl;
   // Reacquire the lock, try to insert into the map.
   mutex_lock l(executor_lock_);
 

@@ -21,6 +21,7 @@ limitations under the License.
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
@@ -602,11 +603,14 @@ void GetMaxPendingCounts(const Node* n, size_t* max_pending,
 }
 
 Status ExecutorImpl::Initialize() {
+	std::cout<<"executor: ExecutorImpl init enter"<<std::endl;
   gview_.Initialize(graph_.get());
 
   // Build the information about frames in this subgraph.
   ControlFlowInfo cf_info;
+	std::cout<<"executor: BuildControlFlowInfo start"<<std::endl;
   TF_RETURN_IF_ERROR(BuildControlFlowInfo(graph_.get(), &cf_info));
+	std::cout<<"executor:  ExecutorImpl init BuildControlFlowInfo end"<<std::endl;
 
   // Cache this value so we make this virtual function call once, rather
   // that O(# steps * # nodes per step) times.
@@ -616,7 +620,7 @@ Status ExecutorImpl::Initialize() {
   for (auto& it : cf_info.unique_frame_names) {
     EnsureFrameInfo(it)->nodes = new std::vector<const Node*>;
   }
-
+	std::cout<<"executor: ExecutorImpl init cache end"<<std::endl;
   // Preprocess every node in the graph to create an instance of op
   // kernel for each node.
   for (const Node* n : graph_->nodes()) {
@@ -634,9 +638,11 @@ Status ExecutorImpl::Initialize() {
 
     item->input_start = frame_info->total_inputs;
     frame_info->total_inputs += n->num_inputs();
-
+	std::cout<<"executor: ExecutorImpl init create kernel start"<<std::endl;
     Status s = params_.create_kernel(n->def(), &item->kernel);
+	std::cout<<"executor: ExecutorImpl init create kernel end"<<std::endl;
     if (!s.ok()) {
+	std::cout<<"executor: ExecutorImpl init create kernel status is not ok"<<std::endl;
       item->kernel = nullptr;
       s = AttachDef(s, *n);
       LOG(ERROR) << "Executor failed to create kernel. " << s;
@@ -677,11 +683,11 @@ Status ExecutorImpl::Initialize() {
       EnsureFrameInfo(enter_name)->input_count++;
     }
   }
-
+	std::cout<<"executor: ExecutorImpl init process end"<<std::endl;
   // Initialize PendingCounts only after item->pending_id is initialized for
   // all nodes.
   InitializePending(graph_.get(), cf_info);
-
+	std::cout<<"executor: ExecutorImpl init end"<<std::endl;
   return gview_.SetAllocAttrs(graph_.get(), params_.device);
 }
 
@@ -2880,11 +2886,17 @@ void ExecutorImpl::RunAsync(const Args& args, DoneCallback done) {
 Status NewLocalExecutor(const LocalExecutorParams& params,
                         std::unique_ptr<const Graph> graph,
                         Executor** executor) {
+	std::cout<<"executor: NewLocalExecutor enter"<<std::endl;
   ExecutorImpl* impl = new ExecutorImpl(params, std::move(graph));
+	std::cout<<"executor: NewLocalExecutor init new"<<std::endl;
   const Status s = impl->Initialize();
+	std::cout<<"executor: NewLocalExecutor init end"<<std::endl;
   if (s.ok()) {
+	std::cout<<"executor: status is ok"<<std::endl;
     *executor = impl;
   } else {
+
+	std::cout<<"executor: status is not ok"<<std::endl;
     delete impl;
   }
   return s;
@@ -2893,8 +2905,10 @@ Status NewLocalExecutor(const LocalExecutorParams& params,
 Status CreateNonCachedKernel(Device* device, FunctionLibraryRuntime* flib,
                              const NodeDef& ndef, int graph_def_version,
                              OpKernel** kernel) {
+	std::cout<<"executor: CreateNonCachedKernel enter"<<std::endl;
   const auto device_type = DeviceType(device->attributes().device_type());
   auto allocator = device->GetAllocator(AllocatorAttributes());
+	std::cout<<"executor: CreateNonCachedKernel end"<<std::endl;
   return CreateOpKernel(device_type, device, allocator, flib, ndef,
                         graph_def_version, kernel);
 }
@@ -2916,9 +2930,11 @@ class DefaultExecutorRegistrar {
     Status NewExecutor(const LocalExecutorParams& params,
                        std::unique_ptr<const Graph> graph,
                        std::unique_ptr<Executor>* out_executor) override {
+	std::cout<<"executor: NewExecutor enter"<<std::endl;
       Executor* ret = nullptr;
       TF_RETURN_IF_ERROR(NewLocalExecutor(params, std::move(graph), &ret));
       out_executor->reset(ret);
+	std::cout<<"executor: NewExecutor end"<<std::endl;
       return Status::OK();
     }
   };

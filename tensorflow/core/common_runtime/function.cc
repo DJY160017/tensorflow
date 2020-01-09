@@ -17,6 +17,7 @@ limitations under the License.
 
 #include <deque>
 #include <vector>
+#include <iostream>
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
@@ -584,27 +585,32 @@ Status FunctionLibraryRuntimeImpl::CreateKernel(const NodeDef& ndef,
                                                 FunctionLibraryRuntime* flr,
                                                 OpKernel** kernel) {
   // If a custom kernel creator is given, try that.
+	std::cout<<"function: CreateKernel enter"<<std::endl;
   Status s;
   if (custom_kernel_creator_ != nullptr &&
       custom_kernel_creator_->CanCreateKernel(*this, ndef)) {
+	std::cout<<"function: CreateKernel CanCreateKernel"<<std::endl;
     std::unique_ptr<OpKernel> ret;
     s = custom_kernel_creator_->CreateKernel(this, ndef, &ret);
     if (s.ok()) {
+	std::cout<<"function: CreateKernel create status is ok"<<std::endl;
       *kernel = ret.release();
     } else {
+	std::cout<<"function: CreateKernel create status is not ok"<<std::endl;
       VLOG(2) << "Custom creator error: " << s;
     }
     return s;
   }
-
+	std::cout<<"function: CreateKernel not CanCreateKernel"<<std::endl;
   const FunctionLibraryDefinition* lib_def =
       flr->GetFunctionLibraryDefinition();
   if (lib_def->Find(ndef.op()) == nullptr) {
     // A primitive operation. Creates the registered kernel.
+	std::cout<<"function: CreateKernel find"<<std::endl;
     return CreateNonCachedKernel(device_, flr, ndef, graph_def_version_,
                                  kernel);
   }
-
+	std::cout<<"function: CreateKernel not find"<<std::endl;
   // Try to instantiate this function for the func/attr. Maybe it's
   // cached already.
   InstantiateOptions options;
@@ -612,12 +618,13 @@ Status FunctionLibraryRuntimeImpl::CreateKernel(const NodeDef& ndef,
     options.lib_def = lib_def;
   }
   Handle handle;
+	std::cout<<"function: CreateKernel Instantiate start"<<std::endl;
   TF_RETURN_IF_ERROR(
       Instantiate(ndef.op(), AttrSlice(&ndef.attr()), options, &handle));
-
+	std::cout<<"function: CreateKernel Instantiate end"<<std::endl;
   const FunctionBody* fbody = GetFunctionBody(handle);
   CHECK_NOTNULL(fbody);
-
+	std::cout<<"function: CreateKernel enter 2"<<std::endl;
   // TODO(zhifengc): For now, we assume int32 and resources are always on host
   // memory and other types are always on device memory. We should do type
   // inference over function body to derive the correct input/output memory

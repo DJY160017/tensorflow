@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/core/common_runtime/executor_factory.h"
 
 #include <unordered_map>
+#include <iostream>
 
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/lib/core/errors.h"
@@ -78,7 +79,9 @@ Status NewExecutor(const string& executor_type,
                    std::unique_ptr<const Graph> graph,
                    std::unique_ptr<Executor>* out_executor) {
   ExecutorFactory* factory = nullptr;
+	std::cout<<"executor_factory: NewExecutor enter"<<std::endl;
   TF_RETURN_IF_ERROR(ExecutorFactory::GetFactory(executor_type, &factory));
+	std::cout<<"executor_factory: NewExecutor end"<<std::endl;
   return factory->NewExecutor(params, std::move(graph), out_executor);
 }
 

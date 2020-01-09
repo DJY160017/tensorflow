@@ -22,6 +22,7 @@ limitations under the License.
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "tensorflow/core/framework/allocation_description.pb.h"
 #include "tensorflow/core/framework/attr_value_util.h"
@@ -1212,6 +1213,7 @@ void OpKernelRegistrar::InitInternal(const KernelDef* kernel_def,
 
 OpKernel* OpKernelRegistrar::PtrOpKernelFactory::Create(
     OpKernelConstruction* context) {
+	std::cout<<"op_kernel: OpKernelRegistrar::PtrOpKernelFactory::Create enter"<<std::endl;
   return (*create_func_)(context);
 }
 
@@ -1456,16 +1458,16 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
                       const NodeDef& node_def, int graph_def_version,
                       OpKernel** kernel) {
   VLOG(1) << "Instantiating kernel for node: " << SummarizeNodeDef(node_def);
-
+	std::cout<<"op_kernel: CreateOpKernel enter"<<std::endl;
   // Look up the Op registered for this op name.
   const OpDef* op_def = nullptr;
   Status s = OpRegistry::Global()->LookUpOpDef(node_def.op(), &op_def);
   if (!s.ok()) return s;
-
+	std::cout<<"op_kernel: CreateOpKernel look up op end"<<std::endl;
   // Validate node_def against OpDef.
   s = ValidateNodeDef(node_def, *op_def);
   if (!s.ok()) return s;
-
+	std::cout<<"op_kernel: CreateOpKernel Validate node_def end"<<std::endl;
   // Look up kernel registration.
   const KernelRegistration* registration;
   bool was_attr_mismatch;
@@ -1475,6 +1477,7 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
     errors::AppendToMessage(&s, " when instantiating ", node_def.op());
     return s;
   }
+	std::cout<<"op_kernel: CreateOpKernel Look up kernel registration end"<<std::endl;
   if (registration == nullptr) {
     s.Update(errors::NotFound("No registered '", node_def.op(),
                               "' OpKernel for '", DeviceTypeString(device_type),
@@ -1489,7 +1492,7 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
         &s, ".  Registered:", KernelsRegisteredForOp(node_def.op()));
     return s;
   }
-
+	std::cout<<"op_kernel: CreateOpKernel Validate registration end"<<std::endl;
   // Get signature from the OpDef & NodeDef
   DataTypeVector inputs;
   DataTypeVector outputs;
@@ -1498,21 +1501,25 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
     errors::AppendToMessage(&s, " for node: ", FormatNodeDefForError(node_def));
     return s;
   }
-
+	std::cout<<"op_kernel: CreateOpKernel Get signature end"<<std::endl;
   // We are creating a kernel for an op registered in
   // OpRegistry::Global(), we consult the kernel registry to decide
   // the kernel's input and output memory types.
   MemoryTypeVector input_memory_types;
   MemoryTypeVector output_memory_types;
+	std::cout<<"op_kernel: CreateOpKernel MemoryTypesForNode start"<<std::endl;
   TF_RETURN_IF_ERROR(MemoryTypesForNode(OpRegistry::Global(), device_type,
                                         node_def, &input_memory_types,
                                         &output_memory_types));
-
+	std::cout<<"op_kernel: CreateOpKernel MemoryTypesForNode end"<<std::endl;
   // Everything needed for OpKernel construction.
+	std::cout<<"op_kernel: CreateOpKernel context start"<<std::endl;
   OpKernelConstruction context(
       device_type, device, allocator, &node_def, op_def, flib, inputs,
       input_memory_types, outputs, output_memory_types, graph_def_version, &s);
+	std::cout<<"op_kernel: CreateOpKernel context end"<<std::endl;
   *kernel = registration->factory->Create(&context);
+	std::cout<<"op_kernel: CreateOpKernel registration end"<<std::endl;
   if (!s.ok()) {
     delete *kernel;
     *kernel = nullptr;
