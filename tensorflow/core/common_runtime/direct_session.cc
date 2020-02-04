@@ -773,7 +773,6 @@ Status DirectSession::Run(const RunOptions& run_options,
   TF_RETURN_IF_ERROR(CheckGraphCreated("Run()")); 
   direct_session_runs->GetCell()->IncrementBy(1);
 
-  std::cout<<"direct_session: run 2 breakpointer 1"<<std::endl;
   // Extract the inputs names for this run of the session.
   std::vector<string> input_tensor_names;
   input_tensor_names.reserve(inputs.size());
@@ -784,23 +783,19 @@ Status DirectSession::Run(const RunOptions& run_options,
   }
   metrics::RecordGraphInputTensors(input_size);
 
-  std::cout<<"direct_session: run 2 breakpointer 2"<<std::endl;
   // Check if we already have an executor for these arguments.
   ExecutorsAndKeys* executors_and_keys;
   RunStateArgs run_state_args(run_options.debug_options());
   run_state_args.collective_graph_key =
       run_options.experimental().collective_graph_key();
 
-  std::cout<<"direct_session: run 2 breakpointer 2.1"<<std::endl;
   TF_RETURN_IF_ERROR(GetOrCreateExecutors(input_tensor_names, output_names,
                                           target_nodes, &executors_and_keys,
                                           &run_state_args));
-  std::cout<<"direct_session: run 2 breakpointer 2.2"<<std::endl;
   {
     mutex_lock l(collective_graph_key_lock_);
     collective_graph_key_ = executors_and_keys->collective_graph_key;
   }
-  std::cout<<"direct_session: run 2 breakpointer 3"<<std::endl;
 
   // Configure a call frame for the step, which we use to feed and
   // fetch values to and from the executors.
@@ -825,7 +820,6 @@ Status DirectSession::Run(const RunOptions& run_options,
     return s;
   }
   
-  std::cout<<"direct_session: run 2 breakpointer 4"<<std::endl;
   const int64 step_id = step_id_counter_.fetch_add(1);
 
   if (LogMemory::IsEnabled()) {
@@ -835,7 +829,7 @@ Status DirectSession::Run(const RunOptions& run_options,
   TF_RETURN_IF_ERROR(RunInternal(step_id, run_options, &call_frame,
                                  executors_and_keys, run_metadata,
                                  thread::ThreadPoolOptions()));
-  std::cout<<"direct_session: run 2 breakpointer 5"<<std::endl;
+  std::cout<<"direct_session: run 2 compute end next to get output"<<std::endl;
   // Receive outputs.
   if (outputs) {
     std::vector<Tensor> sorted_outputs;
