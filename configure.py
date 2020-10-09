@@ -817,7 +817,7 @@ def get_ndk_api_level(environ_cp, android_ndk_home_path):
   android_ndk_api_level = prompt_loop_or_load_from_env(
       environ_cp,
       var_name='ANDROID_NDK_API_LEVEL',
-      var_default='18',  # 18 is required for GPU acceleration.
+      var_default='21',  # 21 is required for ARM64 support.
       ask_for_var=('Please specify the (min) Android NDK API level to use. '
                    '[Available levels: %s]') % api_levels,
       check_success=valid_api_level,
@@ -1170,7 +1170,8 @@ def system_specific_test_config(env):
     write_to_bazelrc('test --test_tag_filters=-gpu,-nomac,-no_mac')
     write_to_bazelrc('test --build_tag_filters=-gpu,-nomac,-no_mac')
   elif is_linux():
-    if env.get('TF_NEED_CUDA', None) == '1':
+    if ((env.get('TF_NEED_CUDA', None) == '1') or
+        (env.get('TF_NEED_ROCM', None) == '1')):
       write_to_bazelrc('test --test_tag_filters=-no_gpu')
       write_to_bazelrc('test --build_tag_filters=-no_gpu')
       write_to_bazelrc('test --test_env=LD_LIBRARY_PATH')
@@ -1196,6 +1197,34 @@ def set_system_libs_flag(environ_cp):
     write_to_bazelrc('build --define=INCLUDEDIR=%s' % environ_cp['INCLUDEDIR'])
 
 
+def is_reduced_optimize_huge_functions_available(environ_cp):
+  """Check to see if the system supports /d2ReducedOptimizeHugeFunctions.
+
+  The above compiler flag is a new compiler flag introduced to the Visual Studio
+  compiler in version 16.4 (available in Visual Studio 2019, Preview edition
+  only, as of 2019-11-19). TensorFlow needs this flag to massively reduce
+  compile times, but until 16.4 is officially released, we can't depend on it.
+
+  See also https://groups.google.com/a/tensorflow.org/g/build/c/SsW98Eo7l3o
+
+  Because it's very annoying to check this manually (to check the MSVC installed
+  versions, you need to use the registry, and it's not clear if Bazel will be
+  using that install version anyway), we expect enviroments who know they may
+  use this flag to export TF_VC_VERSION=16.4
+
+  TODO(angerson, gunan): Remove this function when TensorFlow's minimum VS
+  version is upgraded to 16.4.
+
+  Arguments:
+    environ_cp: Environment of the current execution
+
+  Returns:
+    boolean, whether or not /d2ReducedOptimizeHugeFunctions is available on this
+    machine.
+  """
+  return float(environ_cp.get('TF_VC_VERSION', '0')) >= 16.4
+
+
 def set_windows_build_flags(environ_cp):
   """Set Windows specific build options."""
   # The non-monolithic build is not supported yet
@@ -1205,12 +1234,17 @@ def set_windows_build_flags(environ_cp):
   # Fix winsock2.h conflicts
   write_to_bazelrc(
       'build --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN '
-      '--copt=-DNOGDI --host_copt=-DNOGDI')
+      '--copt=-DNOGDI --host_copt=-DNOGDI --copt=-D_USE_MATH_DEFINES')
   # Output more verbose information when something goes wrong
   write_to_bazelrc('build --verbose_failures')
   # The host and target platforms are the same in Windows build. So we don't
   # have to distinct them. This avoids building the same targets twice.
   write_to_bazelrc('build --distinct_host_configuration=false')
+
+  if is_reduced_optimize_huge_functions_available(environ_cp):
+    write_to_bazelrc(
+        'build --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions'
+    )
 
   if get_var(
       environ_cp, 'TF_OVERRIDE_EIGEN_STRONG_INLINE', 'Eigen strong inline',
@@ -1380,6 +1414,10 @@ def main():
       environ_cp.get('LD_LIBRARY_PATH') != '1'):
     write_action_env_to_bazelrc('LD_LIBRARY_PATH',
                                 environ_cp.get('LD_LIBRARY_PATH'))
+
+  if (environ_cp.get('TF_NEED_ROCM') == '1' and environ_cp.get('ROCM_PATH')):
+    write_action_env_to_bazelrc('ROCM_PATH', environ_cp.get('ROCM_PATH'))
+    write_action_env_to_bazelrc('ROCM_ROOT', environ_cp.get('ROCM_PATH'))
 
   environ_cp['TF_NEED_CUDA'] = str(
       int(get_var(environ_cp, 'TF_NEED_CUDA', 'CUDA', False)))

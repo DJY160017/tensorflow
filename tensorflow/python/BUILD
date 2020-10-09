@@ -1767,6 +1767,16 @@ py_library(
 )
 
 tf_py_test(
+    name = "framework_constant_op_test",
+    size = "small",
+    srcs = ["framework/constant_op_test.py"],
+    additional_deps = [
+        ":constant_op",
+    ],
+    main = "framework/constant_op_test.py",
+)
+
+tf_py_test(
     name = "framework_registry_test",
     size = "small",
     srcs = ["framework/registry_test.py"],
@@ -2854,6 +2864,7 @@ tf_py_test(
         ":framework_for_generated_wrappers",
         "//third_party/py/numpy",
     ],
+    tags = ["no_rocm"],
 )
 
 cuda_py_test(
@@ -3551,24 +3562,26 @@ py_library(
         ":loss_scale",
         ":unconnected_gradients",
         ":util",
+        "//tensorflow/python/distribute:distribute_lib",
         "//tensorflow/python/eager:backprop",
     ],
 )
 
-py_test(
+cuda_py_test(
     name = "loss_scaling_gradient_tape_test",
     size = "medium",
     srcs = ["training/experimental/loss_scaling_gradient_tape_test.py"],
-    python_version = "PY3",
-    deps = [
+    additional_deps = [
         ":client_testlib",
         ":constant_op",
+        ":framework_test_combinations_lib",
         ":loss_scale",
         ":loss_scaling_gradient_tape",
-        "//tensorflow/python/compat:v2_compat",
-        "//tensorflow/python/eager:def_function",
-        "//third_party/py/numpy",
         "@absl_py//absl/testing:parameterized",
+        "//third_party/py/numpy",
+        "//tensorflow/python/compat:v2_compat",
+        "//tensorflow/python/distribute:mirrored_strategy",
+        "//tensorflow/python/eager:def_function",
     ],
 )
 
@@ -4400,6 +4413,7 @@ cuda_py_test(
         "//tensorflow/python/eager:def_function",
     ],
     shard_count = 2,
+    tags = ["no_pip"],
 )
 
 cuda_py_test(
@@ -4446,6 +4460,7 @@ cuda_py_test(
         ":platform",
         "//third_party/py/numpy",
     ],
+    tags = ["no_windows_gpu"],
 )
 
 cuda_py_test(
@@ -5897,6 +5912,7 @@ tf_py_test(
         "client_testlib",
         "framework_test_lib",
     ],
+    tags = ["no_rocm"],
 )
 
 tf_py_test(
@@ -5919,7 +5935,10 @@ tf_py_test(
         ":errors",
         ":lib",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_rocm",
+        "no_windows",
+    ],
 )
 
 tf_py_test(
@@ -6621,6 +6640,7 @@ tf_py_test(
         ":random_ops",
     ],
     main = "layers/pooling_test.py",
+    tags = ["no_rocm"],
 )
 
 cuda_py_test(

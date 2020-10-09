@@ -607,6 +607,18 @@ tf_cc_shared_object(
     ] + tf_additional_binary_deps(),
 )
 
+# This is intended to be the same as tf_binary_additional_srcs:
+# https://github.com/tensorflow/tensorflow/blob/cd67f4f3723f9165aabedd0171aaadc6290636e5/tensorflow/tensorflow.bzl#L396-L425
+# And is usable in the "deps" attribute instead of the "srcs" attribute
+# as a workaround for https://github.com/tensorflow/tensorflow/issues/34117
+cc_import(
+    name = "libtensorflow_framework_import_lib",
+    shared_library = select({
+        "//tensorflow:macos": ":libtensorflow_framework.dylib",
+        "//conditions:default": ":libtensorflow_framework.so",
+    }),
+)
+
 # -------------------------------------------
 # New rules should be added above this target.
 # -------------------------------------------
@@ -863,7 +875,7 @@ gen_api_init_files(
     output_files = TENSORFLOW_API_INIT_FILES_V1,
     output_package = "tensorflow._api.v1",
     root_file_name = "v1.py",
-    root_init_template = "api_template_v1.__init__.py",
+    root_init_template = "$(location api_template_v1.__init__.py)",
 )
 
 gen_api_init_files(
@@ -886,7 +898,7 @@ gen_api_init_files(
     output_files = TENSORFLOW_API_INIT_FILES_V2,
     output_package = "tensorflow._api.v2",
     root_file_name = "v2.py",
-    root_init_template = "api_template.__init__.py",
+    root_init_template = "$(location api_template.__init__.py)",
 )
 
 py_library(
