@@ -273,12 +273,12 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
     tf_http_archive(
         name = "org_sqlite",
         build_file = clean_dep("//third_party:sqlite.BUILD"),
-        sha256 = "d02fc4e95cfef672b45052e221617a050b7f2e20103661cda88387349a9b1327",
-        strip_prefix = "sqlite-amalgamation-3280000",
+        sha256 = "b34f4c0c0eefad9a7e515c030c18702e477f4ef7d8ade6142bdab8011b487ac6",
+        strip_prefix = "sqlite-amalgamation-3330000",
         system_build_file = clean_dep("//third_party/systemlibs:sqlite.BUILD"),
         urls = [
-            "https://storage.googleapis.com/mirror.tensorflow.org/www.sqlite.org/2019/sqlite-amalgamation-3280000.zip",
-            "https://www.sqlite.org/2019/sqlite-amalgamation-3280000.zip",
+            "https://storage.googleapis.com/mirror.tensorflow.org/www.sqlite.org/2020/sqlite-amalgamation-3330000.zip",
+            "https://www.sqlite.org/2020/sqlite-amalgamation-3330000.zip",
         ],
     )
 
@@ -291,7 +291,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         system_build_file = clean_dep("//third_party/systemlibs:gif.BUILD"),
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
-            "http://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
+            "https://pilotfiber.dl.sourceforge.net/project/giflib/giflib-5.2.1.tar.gz",
         ],
     )
 
@@ -500,12 +500,12 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
     tf_http_archive(
         name = "curl",
         build_file = clean_dep("//third_party:curl.BUILD"),
-        sha256 = "4376ac72b95572fb6c4fbffefb97c7ea0dd083e1974c0e44cd7e49396f454839",
-        strip_prefix = "curl-7.65.3",
+        sha256 = "01ae0c123dee45b01bbaef94c0bc00ed2aec89cb2ee0fd598e0d302a6b5e0a98",
+        strip_prefix = "curl-7.69.1",
         system_build_file = clean_dep("//third_party/systemlibs:curl.BUILD"),
         urls = [
-            "https://storage.googleapis.com/mirror.tensorflow.org/curl.haxx.se/download/curl-7.65.3.tar.gz",
-            "https://curl.haxx.se/download/curl-7.65.3.tar.gz",
+            "https://storage.googleapis.com/mirror.tensorflow.org/curl.haxx.se/download/curl-7.69.1.tar.gz",
+            "https://curl.haxx.se/download/curl-7.69.1.tar.gz",
         ],
     )
 
