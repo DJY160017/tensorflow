@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/core/common_runtime/kernel_benchmark_testlib.h"
 
 #include <vector>
+#include <iostream>
 #include "tensorflow/core/common_runtime/device.h"
 #include "tensorflow/core/common_runtime/device_factory.h"
 #include "tensorflow/core/common_runtime/executor_factory.h"
@@ -79,6 +80,7 @@ Benchmark::Benchmark(const string& device, Graph* g,
   params.function_library = nullptr;
   params.create_kernel = [this, graph_def_version](const NodeDef& ndef,
                                                    OpKernel** kernel) {
+    std::cout<<"kernel_benchmasrk_testlib: CreateNonCachedKernel"<<std::endl;
     return CreateNonCachedKernel(device_.get(), nullptr, ndef,
                                  graph_def_version, kernel);
   };

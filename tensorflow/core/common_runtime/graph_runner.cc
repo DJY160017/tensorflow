@@ -38,6 +38,8 @@ limitations under the License.
 #include "tensorflow/core/lib/strings/strcat.h"
 #include "tensorflow/core/public/session_options.h"
 
+#include <iostream>
+
 namespace tensorflow {
 
 namespace {
@@ -160,6 +162,7 @@ Status GraphRunner::Run(Graph* graph, FunctionLibraryRuntime* function_library,
   const int producer = graph_to_run->versions().producer();
   params.create_kernel = [this, function_library, producer](const NodeDef& ndef,
                                                             OpKernel** kernel) {
+    std::cout<<"graph_runner: CreateNonCachedKernel"<<std::endl;
     return CreateNonCachedKernel(device_, function_library, ndef, producer,
                                  kernel);
   };

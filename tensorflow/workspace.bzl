@@ -174,6 +174,7 @@ def tf_repositories(path_prefix = "", tf_repo_name = ""):
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/bitbucket.org/eigen/eigen/get/049af2f56331.tar.gz",
             "https://bitbucket.org/eigen/eigen/get/049af2f56331.tar.gz",
+            "http://172.19.240.140:8100/049af2f56331.tar.gz",
         ],
     )
 

@@ -19,6 +19,7 @@ limitations under the License.
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <typeinfo>
 
 #include "tensorflow/core/platform/env.h"
 #include "tensorflow/core/platform/mutex.h"
@@ -54,6 +55,7 @@ ClientSession::ClientSession(const Scope& scope,
                              const SessionOptions& session_options) {
   Session* new_session;
   Status status = NewSession(session_options, &new_session);
+  std::cout<<"client_session: create real session type"<<typeid(*new_session).name()<<std::endl;     
   TF_CHECK_OK(status) << status;
   impl_.reset(new Impl(new_session, scope.graph_as_shared_ptr()));
   CHECK_NOTNULL(impl()->session_.get());

@@ -1289,18 +1289,20 @@ Status DirectSession::CreateExecutors(
       func_info->flib_def.get(), optimizer_opts, thread_pools_[0].first));
 
   GraphOptimizer optimizer(optimizer_opts);
+  std::cout<<"direct_session: graphs size is: "<<graphs.size()<<std::endl;
   for (auto iter = graphs.begin(); iter != graphs.end(); ++iter) {
     const string& partition_name = iter->first;
     std::unique_ptr<Graph>& partition_graph = iter->second;
 
     Device* device;
-	std::cout<<"direct_session: CreateExecutors lookup device start"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors lookup device start"<<std::endl;
     TF_RETURN_IF_ERROR(device_mgr_->LookupDevice(partition_name, &device));
-	std::cout<<"direct_session: CreateExecutors lookup device end"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors lookup device end"<<std::endl;
     ek->items.resize(ek->items.size() + 1);
     auto* item = &(ek->items.back());
     auto lib = func_info->proc_flr->GetFLR(partition_name);
     if (lib == nullptr) {
+      std::cout<<"direct_session: CreateExecutors error Could not find device:"<<partition_name<<std::endl;
       return errors::Internal("Could not find device: ", partition_name);
     }
     item->flib = lib;
@@ -1321,17 +1323,17 @@ Status DirectSession::CreateExecutors(
       // is stateful, the `CallOp` that invokes it is not.
       std::cout<<"direct_session: createKernel call back enter"<<std::endl;
       if (!OpSegment::ShouldOwnKernel(lib, ndef.op())) {
-		std::cout<<"direct_session: createKernel call back ShouldOwnKernel false"<<std::endl;
+		    std::cout<<"direct_session: createKernel call back ShouldOwnKernel false"<<std::endl;
         return lib->CreateKernel(ndef, kernel);
       }
       auto create_fn = [lib, &ndef](OpKernel** kernel) {
-	std::cout<<"direct_session: createKernel call back real"<<std::endl;
+	      std::cout<<"direct_session: createKernel call back real"<<std::endl;
         return lib->CreateKernel(ndef, kernel);
       };
       // Kernels created for subgraph nodes need to be cached.  On
       // cache miss, create_fn() is invoked to create a kernel based
       // on the function library here + global op registry.
-	std::cout<<"direct_session: createKernel call back end"<<std::endl;
+	    std::cout<<"direct_session: createKernel call back end"<<std::endl;
       return opseg->FindOrCreate(session_handle_, ndef.name(), kernel,
                                  create_fn);
     };
@@ -1352,26 +1354,26 @@ Status DirectSession::CreateExecutors(
     const DebugOptions& debug_options =
         options.callable_options.run_options().debug_options();
     if (!debug_options.debug_tensor_watch_opts().empty()) {
-	std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug start"<<std::endl;
+	    std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug start"<<std::endl;
       TF_RETURN_IF_ERROR(DecorateAndPublishGraphForDebug(
           debug_options, partition_graph.get(), params.device));
-	std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug end"<<std::endl;
+	    std::cout<<"direct_session: CreateExecutors DecorateAndPublishGraphForDebug end"<<std::endl;
     }
 
-	std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes start"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes start"<<std::endl;
     TF_RETURN_IF_ERROR(EnsureMemoryTypes(DeviceType(device->device_type()),
                                          device->name(),
                                          partition_graph.get()));
-	std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes end"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors EnsureMemoryTypes end"<<std::endl;
     // NewLocalExecutor takes ownership of partition_graph.
     item->graph = partition_graph.get();
     item->executor = nullptr;
     item->device = device;
     auto executor_type = options_.config.experimental().executor_type();
-	std::cout<<"direct_session: CreateExecutors NewExecutor start"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors NewExecutor start"<<std::endl;
     TF_RETURN_IF_ERROR(NewExecutor(
         executor_type, params, std::move(partition_graph), &item->executor));
-	std::cout<<"direct_session: CreateExecutors NewExecutor end"<<std::endl;
+	  std::cout<<"direct_session: CreateExecutors NewExecutor end"<<std::endl;
   }
 
   // Cache the mapping from input/output names to graph elements to
