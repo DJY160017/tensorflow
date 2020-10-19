@@ -654,6 +654,15 @@ Status ConstantFold(const ConstantFoldingOptions& opts,
     }
   }
 
+  for(const Node* n : graph->nodes()) {
+    AttrSlice attr_slice = n->attrs();
+    for(auto i = attr_slice.begin();i!=attr_slice.end();i++){
+      const AttrValue val = (*i).second;
+      Tensor tmp_tensor;
+      bool result = tmp_tensor.FromProto(val.tensor());
+    }
+  }
+
   DumpGraph("After", graph);
 
   *was_mutated = (num_nodes_replaced > 0);
