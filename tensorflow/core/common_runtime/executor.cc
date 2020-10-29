@@ -623,6 +623,7 @@ Status ExecutorImpl::Initialize() {
 	std::cout<<"executor: ExecutorImpl init cache end"<<std::endl;
   // Preprocess every node in the graph to create an instance of op
   // kernel for each node.
+  int count = 0;
   for (const Node* n : graph_->nodes()) {
     const int id = n->id();
     const string& frame_name = cf_info.frame_names[id];
@@ -638,11 +639,11 @@ Status ExecutorImpl::Initialize() {
 
     item->input_start = frame_info->total_inputs;
     frame_info->total_inputs += n->num_inputs();
-	std::cout<<"executor: ExecutorImpl init create kernel start"<<std::endl;
+	  std::cout<<"executor: ExecutorImpl init create kernel start loop: "<<count<<std::endl;
     Status s = params_.create_kernel(n->def(), &item->kernel);
-	std::cout<<"executor: ExecutorImpl init create kernel end"<<std::endl;
+	  std::cout<<"executor: ExecutorImpl init create kernel end loop: "<<count<<std::endl;
     if (!s.ok()) {
-	std::cout<<"executor: ExecutorImpl init create kernel status is not ok"<<std::endl;
+	    std::cout<<"executor: ExecutorImpl init create kernel status is not ok"<<std::endl;
       item->kernel = nullptr;
       s = AttachDef(s, *n);
       LOG(ERROR) << "Executor failed to create kernel. " << s;
@@ -682,6 +683,8 @@ Status ExecutorImpl::Initialize() {
       TF_RETURN_IF_ERROR(GetNodeAttr(n->attrs(), "frame_name", &enter_name));
       EnsureFrameInfo(enter_name)->input_count++;
     }
+
+    count++;
   }
 	std::cout<<"executor: ExecutorImpl init process end"<<std::endl;
   // Initialize PendingCounts only after item->pending_id is initialized for
@@ -1551,7 +1554,9 @@ void ExecutorState::RunAsync(Executor::DoneCallback done) {
     root_frame_->iterations[0]->outstanding_ops = ready.size();
     done_cb_ = std::move(done);
     // Schedule to run all the ready ops in thread pool.
+    std::cout<<"executor: ExecutorState RunAsync before ScheduleReady"<<std::endl;
     ScheduleReady(ready, nullptr);
+    std::cout<<"executor: ExecutorState RunAsync after ScheduleReady"<<std::endl;
   }
 }
 
@@ -1687,6 +1692,7 @@ void ExecutorState::Process(TaggedNode tagged_node, int64 scheduled_nsec) {
   EntryVector outputs;
   bool completed = false;
   inline_ready.push_back(tagged_node);
+  int count= 0;
   while (!inline_ready.empty()) {
     tagged_node = inline_ready.front();
     inline_ready.pop_front();
@@ -1750,7 +1756,9 @@ void ExecutorState::Process(TaggedNode tagged_node, int64 scheduled_nsec) {
         }
         MaybeMarkCompleted(input_frame, input_iter, id);
         // Continue to process the nodes in 'inline_ready'.
+        std::cout<<"executor: ExecutorState Process before NodeDone status is not ok"<<std::endl;
         completed = NodeDone(s, item.node, ready, stats, &inline_ready);
+        std::cout<<"executor: ExecutorState Process after NodeDone status is not ok"<<std::endl;
         continue;
       }
 
@@ -1810,8 +1818,10 @@ void ExecutorState::Process(TaggedNode tagged_node, int64 scheduled_nsec) {
             device->ConsumeListOfAccessedTensors(state->ctx.op_device_context(),
                                                  accessed);
           }
+          std::cout<<"executor: ExecutorState Process before NodeDone done"<<std::endl;
           const bool completed =
               NodeDone(s, state->item->node, ready, stats, nullptr);
+          std::cout<<"executor: ExecutorState Process after NodeDone done"<<std::endl;
           delete state;
           if (completed) ScheduleFinish();
         };
@@ -1897,7 +1907,9 @@ void ExecutorState::Process(TaggedNode tagged_node, int64 scheduled_nsec) {
         scheduled_nsec = nodestats::NowInNsec();
       }
       // Postprocess.
+      std::cout<<"executor: ExecutorState Process before NodeDone Postprocess "<<count<<std::endl;
       completed = NodeDone(s, item.node, ready, stats, &inline_ready);
+      std::cout<<"executor: ExecutorState Process after NodeDone Postprocess "<<count<<std::endl;
     }
   }  // while !inline_ready.empty()
 
@@ -2002,10 +2014,12 @@ Status ExecutorState::ProcessOutputs(const NodeItem& item, OpKernelContext* ctx,
                                      NodeExecStatsInterface* stats) {
   const Node* node = item.node;
   DCHECK_EQ(0, outputs->size());
+  std::cout<<"executor: ProcessOutputs outputs size is: "<<outputs->size()<<" item.num_outputs is :"<<item.num_outputs<<std::endl;
   outputs->resize(item.num_outputs);
 
   Status s = ctx->status();
   if (!s.ok()) {
+    std::cout<<"executor: ProcessOutputs ctx status is not ok"<<std::endl;
     s = AttachDef(s, item.kernel->def());
     // TODO(misard) Replace with a finer-grain enabling flag once we
     // add better optional debugging support.
@@ -2063,6 +2077,7 @@ Status ExecutorState::ProcessOutputs(const NodeItem& item, OpKernelContext* ctx,
           nodestats::SetOutput(stats, i, val.tensor);
         }
         if (val.is_ref()) {
+          std::cout<<"executor: ProcessOutputs val is ref index: "<<i<<std::endl;
           out->has_value = true;
           out->ref = val.tensor;
           out->ref_mu = val.mutex_if_ref;
@@ -2077,6 +2092,7 @@ Status ExecutorState::ProcessOutputs(const NodeItem& item, OpKernelContext* ctx,
                                           ctx->step_id(), i, to_log);
           }
         } else {
+          std::cout<<"executor: ProcessOutputs val is not ref index: "<<i<<std::endl;
           // NOTE that std::move is used here, so val.tensor goes to
           // uninitialized state (val.tensor->IsInitialized return false).
           DCHECK(!out->val_field_is_set);
@@ -2128,6 +2144,7 @@ void ExecutorState::PropagateOutputs(const TaggedNode& tagged_node,
   int64 output_iter = input_iter;
 
   if (!item->is_enter_exit_or_next_iter) {
+    std::cout<<"executor: PropagateOutputs is_enter_exit_or_next_iter"<<std::endl;
     // Fast path for nodes types that don't need special handling
     DCHECK_EQ(input_frame, output_frame);
     // Normal path for most nodes
@@ -2136,6 +2153,7 @@ void ExecutorState::PropagateOutputs(const TaggedNode& tagged_node,
     is_frame_done = input_frame->DecrementOutstandingOpsLocked(
         &impl_->gview_, input_iter, ready);
   } else if (item->is_enter) {
+    std::cout<<"executor: PropagateOutputs is_enter"<<std::endl;
     FindOrCreateChildFrame(input_frame, input_iter, node, &output_frame);
     output_iter = 0;
     {
@@ -2152,6 +2170,7 @@ void ExecutorState::PropagateOutputs(const TaggedNode& tagged_node,
     is_frame_done =
         input_frame->DecrementOutstandingOps(&impl_->gview_, input_iter, ready);
   } else if (item->is_exit) {
+    std::cout<<"executor: PropagateOutputs is_exit"<<std::endl;
     if (is_dead) {
       mutex_lock l(input_frame->mu);
       // Stop and remember this node if it is a dead exit.
@@ -2171,6 +2190,7 @@ void ExecutorState::PropagateOutputs(const TaggedNode& tagged_node,
                                                            input_iter, ready);
     }
   } else {
+    std::cout<<"executor: PropagateOutputs last"<<std::endl;
     DCHECK(IsNextIteration(node));
     mutex_lock l(input_frame->mu);
     if (is_dead) {
@@ -2203,6 +2223,7 @@ void ExecutorState::PropagateOutputs(const TaggedNode& tagged_node,
   // At this point, this node is completely done. We also know if the
   // completion of this node makes its frame completed.
   if (is_frame_done) {
+    std::cout<<"executor: PropagateOutputs is_frame_done"<<std::endl;
     FrameState* parent_frame = input_frame->parent_frame;
     const int64 parent_iter = input_frame->parent_iter;
     DeleteFrame(input_frame, ready);
@@ -2276,7 +2297,9 @@ bool ExecutorState::NodeDone(const Status& s, const Node* node,
 
   // Schedule the ready nodes in 'ready'.
   if (s.ok()) {
+    std::cout<<"executor: ExecutorState NodeDone before ScheduleReady"<<std::endl;
     ScheduleReady(ready, inline_ready);
+    std::cout<<"executor: ExecutorState NodeDone after ScheduleReady"<<std::endl;
   }
   return completed;
 }
@@ -2289,24 +2312,34 @@ void ExecutorState::ScheduleReady(const TaggedNodeSeq& ready,
   if (stats_collector_) {
     scheduled_nsec = nodestats::NowInNsec();
   }
+  std::cout<<"executor: ExecutorState ScheduleReady scheduled_nsec is:"<<scheduled_nsec<<std::endl;
 
   if (inline_ready == nullptr) {
     // Schedule to run all the ready ops in thread pool.
+    std::cout<<"executor: ExecutorState ScheduleReady inline_ready is null"<<std::endl;
+    int count = 0;
     for (auto& tagged_node : ready) {
+      std::cout<<"executor: ExecutorState ScheduleReady runner_ init loop: "<<count<<std::endl;
       runner_([=]() { Process(tagged_node, scheduled_nsec); });
+      count++;
     }
     return;
   }
 
   const GraphView& gview = impl_->gview_;
   const TaggedNode* curr_expensive_node = nullptr;
+  int count = 0;
   for (auto& tagged_node : ready) {
+    std::cout<<"executor: ExecutorState ScheduleReady runner_1 init loop: "<<count<<std::endl;
     const NodeItem& item = *gview.node(tagged_node.node->id());
     if (tagged_node.is_dead || !item.kernel->IsExpensive()) {
       // Inline this inexpensive node.
       inline_ready->push_back(tagged_node);
+      std::cout<<"executor: ExecutorState ScheduleReady tagged_node.is_dead or item.kernel is not Expensive"<<std::endl;
     } else {
+      std::cout<<"executor: ExecutorState ScheduleReady tagged_node not is dead and  item.kernel is Expensive"<<std::endl;
       if (curr_expensive_node) {
+        std::cout<<"executor: ExecutorState ScheduleReady curr_expensive_node is true"<<std::endl;
         // Dispatch to another thread since there is plenty of work to
         // do for this thread.
         runner_(std::bind(&ExecutorState::Process, this, *curr_expensive_node,
@@ -2314,12 +2347,17 @@ void ExecutorState::ScheduleReady(const TaggedNodeSeq& ready,
       }
       curr_expensive_node = &tagged_node;
     }
+    count++;
   }
+
   if (curr_expensive_node) {
+    std::cout<<"executor: ExecutorState ScheduleReady curr_expensive_node1 is true"<<std::endl;
     if (inline_ready->empty()) {
+      std::cout<<"executor: ExecutorState ScheduleReady curr_expensive_node1 inline_ready is empty"<<std::endl;
       // Tail recursion optimization
       inline_ready->push_back(*curr_expensive_node);
     } else {
+      std::cout<<"executor: ExecutorState ScheduleReady curr_expensive_node1 inline_ready is not empty"<<std::endl;
       // There are inline nodes to run already. We dispatch this expensive
       // node to other thread.
       runner_(std::bind(&ExecutorState::Process, this, *curr_expensive_node,
@@ -2715,6 +2753,7 @@ void ExecutorState::FrameState::ActivateNodes(const NodeItem* item,
     const bool is_control_edge = (src_slot == Graph::kControlSlot);
     bool dst_need_input = !is_control_edge;
     if (dst_item->is_merge) {
+      std::cout<<"executor: ExecutorState ActivateNodes dst_item->is_merge index:"<<out_index<<std::endl;
       // A merge node is ready if all control inputs have arrived and either
       // a) a live data input becomes available or b) all data inputs are
       // dead. For Merge, pending's LSB is set iff a live data input has
@@ -2752,6 +2791,7 @@ void ExecutorState::FrameState::ActivateNodes(const NodeItem* item,
         }
       }
     } else {
+      std::cout<<"executor: ExecutorState ActivateNodes dst_item->is_merge false index:"<<out_index<<std::endl;
       const bool increment_dead =
           (is_dead || (!is_control_edge && !(*outputs)[src_slot].has_value));
       int pending, dead;
@@ -2762,6 +2802,7 @@ void ExecutorState::FrameState::ActivateNodes(const NodeItem* item,
     }
 
     if (dst_need_input) {
+      std::cout<<"executor: ExecutorState ActivateNodes dst_need_input index:"<<out_index<<std::endl;
       const int dst_slot = e.input_slot;
       const int dst_loc = dst_item->input_start + dst_slot;
       if (e.is_last) {
@@ -2773,6 +2814,7 @@ void ExecutorState::FrameState::ActivateNodes(const NodeItem* item,
 
     // Add dst to the ready queue if it's ready
     if (dst_ready) {
+      std::cout<<"executor: ExecutorState ActivateNodes dst_ready index:"<<out_index<<std::endl;
       if (dst_item->is_control_trigger) dst_dead = false;
       ready->emplace_back(dst_item->node, this, iter, dst_dead);
       iter_state->outstanding_ops++;
@@ -2878,7 +2920,9 @@ bool ExecutorState::FrameState::CleanupIterations(const GraphView* gview,
 }
 
 void ExecutorImpl::RunAsync(const Args& args, DoneCallback done) {
+  std::cout<<"executor: ExecutorImpl before ExecutorState RunAsync"<<std::endl;
   (new ExecutorState(args, this))->RunAsync(std::move(done));
+  std::cout<<"executor: ExecutorImpl after ExecutorState RunAsync"<<std::endl;
 }
 
 }  // namespace
@@ -2892,11 +2936,10 @@ Status NewLocalExecutor(const LocalExecutorParams& params,
   const Status s = impl->Initialize();
 	std::cout<<"executor: NewLocalExecutor init end"<<std::endl;
   if (s.ok()) {
-	std::cout<<"executor: status is ok"<<std::endl;
+	  std::cout<<"executor: status is ok"<<std::endl;
     *executor = impl;
   } else {
-
-	std::cout<<"executor: status is not ok"<<std::endl;
+	  std::cout<<"executor: status is not ok"<<std::endl;
     delete impl;
   }
   return s;
@@ -2930,11 +2973,13 @@ class DefaultExecutorRegistrar {
     Status NewExecutor(const LocalExecutorParams& params,
                        std::unique_ptr<const Graph> graph,
                        std::unique_ptr<Executor>* out_executor) override {
-	std::cout<<"executor: NewExecutor enter"<<std::endl;
+	    std::cout<<"executor: NewExecutor enter"<<std::endl;
       Executor* ret = nullptr;
+      std::cout<<"executor: before NewLocalExecutor"<<std::endl;
       TF_RETURN_IF_ERROR(NewLocalExecutor(params, std::move(graph), &ret));
+       std::cout<<"executor: after NewLocalExecutor"<<std::endl;
       out_executor->reset(ret);
-	std::cout<<"executor: NewExecutor end"<<std::endl;
+	    std::cout<<"executor: NewExecutor end"<<std::endl;
       return Status::OK();
     }
   };

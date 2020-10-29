@@ -174,8 +174,10 @@ Status GraphRunner::Run(Graph* graph, FunctionLibraryRuntime* function_library,
   };
 
   Executor* executor;
+  std::cout<<"graph_runner: before NewLocalExecutor"<<std::endl;
   TF_RETURN_IF_ERROR(
       NewLocalExecutor(params, std::move(graph_to_run), &executor));
+  std::cout<<"graph_runner: after NewLocalExecutor"<<std::endl;
   std::unique_ptr<Executor> executor_unref(executor);
 
   Executor::Args args;
@@ -193,7 +195,9 @@ Status GraphRunner::Run(Graph* graph, FunctionLibraryRuntime* function_library,
   args.cancellation_manager = &cancellation_manager;
 
   // Run the graph.
+  std::cout<<"graph_runner: before executor run"<<std::endl;
   TF_RETURN_IF_ERROR(executor->Run(args));
+  std::cout<<"graph_runner: after executor run"<<std::endl;
 
   outputs->resize(output_names.size());
   for (size_t i = 0; i < output_names.size(); ++i) {

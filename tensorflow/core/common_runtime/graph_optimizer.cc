@@ -22,6 +22,8 @@ limitations under the License.
 #include "tensorflow/core/graph/node_builder.h"
 #include "tensorflow/core/graph/optimizer_cse.h"
 
+#include <iostream>
+
 namespace tensorflow {
 
 GraphOptimizer::GraphOptimizer(const OptimizerOptions& opts) : opts_(opts) {
@@ -62,6 +64,7 @@ void GraphOptimizer::Optimize(
     }
 
     if (opts_.do_constant_folding()) {
+      std::cout<<"graph_optimizer: opts do_constant_folding"<<" rounds"<<rounds<<std::endl;
       ConstantFoldingOptions cf_opts;
       cf_opts.shape_map = shape_map;
       cf_opts.consider = cf_consider_fn;
@@ -70,9 +73,12 @@ void GraphOptimizer::Optimize(
             opts_.max_folded_constant_in_bytes();
       }
       bool was_mutated;
+      std::cout<<"graph_optimizer: ConstantFold start"<<" rounds"<<rounds<<std::endl;
       ConstantFold(cf_opts, runtime, env, device, g, &was_mutated)
           .IgnoreError();
+      std::cout<<"graph_optimizer: ConstantFold end"<<" rounds"<<rounds<<std::endl;
       if (was_mutated) {
+        std::cout<<"graph_optimizer: opts do_constant_folding was_mutated"<<" rounds"<<rounds<<std::endl;
         RemoveDeadNodes(g);
         DumpGraph("ConstFolding", g);
         changed = true;
@@ -80,15 +86,18 @@ void GraphOptimizer::Optimize(
     }
 
     if (opts_.do_function_inlining() && FixupSourceAndSinkEdges(g)) {
+      std::cout<<"graph_optimizer: do_function_inlining() && FixupSourceAndSinkEdges"<<" rounds"<<rounds<<std::endl;
       DumpGraph("FixupSourceAndSinkEdges", g);
       changed = true;
     }
     if (opts_.do_common_subexpression_elimination() &&
         OptimizeCSE(g, cse_consider_fn)) {
+      std::cout<<"graph_optimizer: do_common_subexpression_elimination"<<" rounds"<<rounds<<std::endl;
       DumpGraph("OptimizeCSE", g);
       changed = true;
     }
     if (opts_.do_function_inlining()) {
+      std::cout<<"graph_optimizer: opts do_function_inlining"<<" rounds"<<rounds<<std::endl;
       ExpandInlineFunctionsOptions expand_inline_opts;
       expand_inline_opts.native_options.inlined_function_body_placer =
           InlinedFunctionBodyPlacer::SingleDevice();
@@ -116,6 +125,7 @@ void GraphOptimizer::Optimize(
     if (!changed) break;
   }
 
+  
   // Note that we use the Graph constructor that copies the input
   // FunctionLibraryDefinition, since the original lib def will go out of scope.
   std::unique_ptr<Graph> copy(new Graph(g->flib_def()));

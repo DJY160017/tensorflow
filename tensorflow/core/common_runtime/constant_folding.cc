@@ -41,6 +41,8 @@ limitations under the License.
 #include "tensorflow/core/platform/setround.h"
 #include "tensorflow/core/public/session_options.h"
 
+#include <iostream>
+
 namespace tensorflow {
 
 namespace {
@@ -484,18 +486,22 @@ bool ReplaceTensorWithConstant(
   // TODO(keveman): Consider adding a new constant op that has a kernel
   // implementation for all types, but with HostMemory constraint on it's
   // output.
+  std::cout<<"constant_folding: ReplaceTensorWithConstant constant type: "<<constant.dtype()<<std::endl;
   if (tensor.first->IsConstant()) {
+    std::cout<<"constant_folding: ReplaceTensorWithConstant tensor.first is Constant"<<std::endl;
     return false;
   }
   DeviceType device_type = partition_device
                                ? DeviceType{partition_device->device_type()}
                                : DEVICE_CPU;
   if (partition_device && device_type != DEVICE_CPU) {
+    std::cout<<"constant_folding: ReplaceTensorWithConstant partition_device && device_type != DEVICE_CPU"<<std::endl;
     MemoryTypeVector input_mvec;
     MemoryTypeVector output_mvec;
     if (!MemoryTypesForNode(graph->op_registry(), device_type,
                             tensor.first->def(), &input_mvec, &output_mvec)
              .ok()) {
+      std::cout<<"constant_folding: ReplaceTensorWithConstant MemoryTypesForNode false"<<std::endl;
       return false;
     }
     for (int i = 0; i < output_mvec.size(); i++) {
@@ -503,11 +509,13 @@ bool ReplaceTensorWithConstant(
       bool is_int32 = tensor.first->output_type(i) == DT_INT32;
       if ((memory_type == HOST_MEMORY && !is_int32) ||
           (memory_type == DEVICE_MEMORY && is_int32)) {
+        std::cout<<"constant_folding: ReplaceTensorWithConstant (memory_type == HOST_MEMORY && !is_int32) || (memory_type == DEVICE_MEMORY && is_int32)"<<" index: "<<i<<std::endl;
         return false;
       }
     }
   }
   if (constant.TotalBytes() > max_constant_size_in_bytes) {
+    std::cout<<"constant_folding: ReplaceTensorWithConstant constant.TotalBytes() > max_constant_size_in_bytes"<<std::endl;
     return false;
   }
 
@@ -528,10 +536,12 @@ bool ReplaceTensorWithConstant(
   }
   NodeDef def;
   if (!builder.Finalize(&def).ok()) {
+    std::cout<<"constant_folding: ReplaceTensorWithConstant builder finalize is not ok"<<std::endl;
     return false;
   }
   const KernelDef* kdef;
   if (!FindKernelDef(device_type, def, &kdef, nullptr).ok()) {
+    std::cout<<"constant_folding: ReplaceTensorWithConstant FindKernelDef false"<<std::endl;
     return false;
   }
 
@@ -554,6 +564,25 @@ bool ReplaceTensorWithConstant(
   }
   if (partition_device) {
     constant_node->set_assigned_device_name(partition_device->name());
+  }
+
+  for (const Node* n : graph->nodes()) {
+    AttrSlice attr_slice = n->attrs();
+
+    int inner_count = 0;
+    for(auto i = attr_slice.begin();i!=attr_slice.end();i++){
+      const AttrValue val = (*i).second;
+      Tensor tmp_tensor;
+      bool result = tmp_tensor.FromProto(val.tensor());
+      if(!result){
+        std::cout<<"const_folding: ReplaceTensorWithConstant init tensor can not parse"<<" inner_index: "<<inner_count<<std::endl;
+        inner_count++;
+        continue;
+      }
+      std::cout<<"const_folding: init type: "<<tmp_tensor.dtype()<<" inner index: "<<inner_count<<std::endl;
+      inner_count++;
+    }
+    std::cout<<"const_folding: ReplaceTensorWithConstant init inner index: "<<inner_count<<std::endl;
   }
   return true;
 }
@@ -650,6 +679,7 @@ Status ConstantFold(const ConstantFoldingOptions& opts,
     if (ReplaceTensorWithConstant(
             graph, partition_device, tensors_to_replace[c], outputs[c],
             control_deps, opts.max_constant_size_in_bytes, generate_new_name)) {
+      std::cout<<"const_folding: ReplaceTensorWithConstant is true"<<std::endl;
       ++num_nodes_replaced;
     }
   }

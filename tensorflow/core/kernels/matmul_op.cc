@@ -83,7 +83,7 @@ bool ExplicitVectorMatrixOptimization(
     Tensor* out) {
 	std::cout<<"matmul_op: ExplicitVectorMatrixOptimization enter"<<std::endl;
   if (out->dim_size(0) == 1) {
-	std::cout<<"matmul_op: ExplicitVectorMatrixOptimization 0 dim size is 1"<<std::endl;
+	  std::cout<<"matmul_op: ExplicitVectorMatrixOptimization 0 dim size is 1"<<std::endl;
     if (dim_pair[0].second == 0) {
       // Note: this case is optimized in Eigen Tensors.
       return false;
@@ -95,34 +95,34 @@ bool ExplicitVectorMatrixOptimization(
     }
     return true;
   } else if (out->dim_size(1) == 1) {
-	std::cout<<"matmul_op: ExplicitVectorMatrixOptimization 1 dim size is 1"<<std::endl;
+	  std::cout<<"matmul_op: ExplicitVectorMatrixOptimization 1 dim size is 1"<<std::endl;
     auto out_v = ToEigenVector<T>(out);
     auto a_m = ToEigenMatrix<T>(a);
     auto b_v = ToEigenVector<T>(b);
     if (dim_pair[0].first == 0) {
-	std::cout<<"matmul_op: ExplicitVectorMatrixOptimization a transponse is 0"<<std::endl;
+	    std::cout<<"matmul_op: ExplicitVectorMatrixOptimization a transponse is 0"<<std::endl;
       out_v.noalias() = a_m.transpose() * b_v;
     } else {
-	std::cout<<"matmul_op: ExplicitVectorMatrixOptimization a transponse is 1"<<std::endl;
-	if(std::is_same<T, iRRAM::REAL>::value){
-		 auto print_content = out->matrix<iRRAM::REAL>();
-    		iRRAM::REAL* real_value = print_content.data();
-    		iRRAM::cout<<"before compute: "<<(*real_value)<<std::endl;	
-	}else if(std::is_same<T, float>::value){
-		 auto print_content = out->matrix<float>();
-    		std::cout<<"before compute: "<<*print_content.data()<<std::endl;
-	}
+      std::cout<<"matmul_op: ExplicitVectorMatrixOptimization a transponse is 1"<<std::endl;
+      if(std::is_same<T, iRRAM::REAL>::value){
+        auto print_content = out->matrix<iRRAM::REAL>();
+            iRRAM::REAL* real_value = print_content.data();
+            iRRAM::cout<<"before compute: "<<(*real_value)<<std::endl;	
+      }else if(std::is_same<T, float>::value){
+        auto print_content = out->matrix<float>();
+        std::cout<<"before compute: "<<*print_content.data()<<std::endl;
+      }
       out_v.noalias() = a_m * b_v;
-	std::cout<<typeid(out_v).name()<<std::endl;
+	    std::cout<<typeid(out_v).name()<<std::endl;
     }
-	if(std::is_same<T, iRRAM::REAL>::value){
-		 auto print_content = out->matrix<iRRAM::REAL>();
-    		iRRAM::REAL* real_value = print_content.data();
-    		iRRAM::cout<<"after compute: "<<(*real_value)<<std::endl;	
-	}else if(std::is_same<T, float>::value){
-		 auto print_content = out->matrix<float>();
-    		std::cout<<"after compute: "<<*print_content.data()<<std::endl;
-	}
+    if(std::is_same<T, iRRAM::REAL>::value){
+      auto print_content = out->matrix<iRRAM::REAL>();
+      iRRAM::REAL* real_value = print_content.data();
+      iRRAM::cout<<"after compute: "<<(*real_value)<<std::endl;	
+    }else if(std::is_same<T, float>::value){
+      auto print_content = out->matrix<float>();
+      std::cout<<"after compute: "<<*print_content.data()<<std::endl;
+    }
     return true;
   }
   return false;
@@ -481,19 +481,19 @@ class MatMulOp : public OpKernel {
   }
 
   void Compute(OpKernelContext* ctx) override {
-	std::cout<<"matmul_op: Compute"<<std::endl;
+	  std::cout<<"matmul_op: Compute"<<std::endl;
     const Tensor& a = ctx->input(0);
     const Tensor& b = ctx->input(1);
-	if(std::is_same<T, iRRAM::REAL>::value){
-		auto print_content = a.matrix<iRRAM::REAL>();
-    		const iRRAM::REAL* real_value = print_content.data();
-		std::cout<<a.dims()<<std::endl;
-		iRRAM::cout<<(*real_value)<<std::endl;	
-		auto print_content1 = b.matrix<iRRAM::REAL>();
-    		const iRRAM::REAL* real_value1 = print_content1.data();
-		std::cout<<b.dims()<<std::endl;
-    		iRRAM::cout<<(*real_value1)<<std::endl;		
-	}
+    if(std::is_same<T, iRRAM::REAL>::value){
+      auto print_content = a.matrix<iRRAM::REAL>();
+          const iRRAM::REAL* real_value = print_content.data();
+      std::cout<<a.dims()<<std::endl;
+      iRRAM::cout<<(*real_value)<<std::endl;	
+      auto print_content1 = b.matrix<iRRAM::REAL>();
+          const iRRAM::REAL* real_value1 = print_content1.data();
+      std::cout<<b.dims()<<std::endl;
+          iRRAM::cout<<(*real_value1)<<std::endl;		
+    }
 	
     // Check that the dimensions of the two matrices are valid.
     OP_REQUIRES(
@@ -520,9 +520,9 @@ class MatMulOp : public OpKernel {
     Tensor* out = nullptr;
     OP_REQUIRES_OK(ctx, ctx->allocate_output(0, out_shape, &out));
 
-	std::cout<<"judge the result information"<<std::endl;
+	  std::cout<<"judge the result information"<<std::endl;
     if (out->NumElements() == 0) {
-	std::cout<<"don't compute so that the result is 0"<<std::endl;
+	    std::cout<<"don't compute so that the result is 0"<<std::endl;
       // If a has shape [0, x] or b has shape [x, 0], the output shape
       // is a 0-element matrix, so there is nothing to do.
       return;
@@ -532,7 +532,7 @@ class MatMulOp : public OpKernel {
       // If a has shape [x, 0] and b has shape [0, y], the
       // output shape is [x, y] where x and y are non-zero, so we fill
       // the output with zeros.
-	std::cout<<"don't compute just fill 0"<<std::endl;
+	    std::cout<<"don't compute just fill 0"<<std::endl;
       functor::SetZeroFunctor<Device, T> f;
       f(ctx->eigen_device<Device>(), out->flat<T>());
       return;
@@ -560,7 +560,7 @@ class MatMulOp : public OpKernel {
       FloatToBFloat16(out_float.flat<float>().data(),
                       out->flat<bfloat16>().data(), out->NumElements());
     } else {
-	std::cout<<"execute the next funtion LaunchMatMul"<<std::endl;
+	    std::cout<<"execute the next funtion LaunchMatMul"<<std::endl;
       LaunchMatMul<Device, T, USE_CUBLAS>::launch(
           ctx, a, b, dim_pair, &algorithms_, use_autotune_, out);
     }

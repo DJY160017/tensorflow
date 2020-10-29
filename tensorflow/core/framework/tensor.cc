@@ -423,7 +423,7 @@ struct ProtoHelper<iRRAM::REAL> {
   static void Fill(const iRRAM::REAL* data, size_t n, TensorProto* proto) {
     auto* real_values = proto->mutable_real_val();
     real_values->Clear();
-    const int p_length = 1000000;
+    const int p_length = 1000;
     for (size_t i = 0; i < n; ++i) {
       std::string content = iRRAM::swrite(data[i], p_length);
       std::string* ptr = real_values->Add();
@@ -1232,7 +1232,7 @@ string Tensor::SummarizeValue(int64 max_entries, bool print_v2) const {
       }
       // loop.
       const iRRAM::REAL* array = reinterpret_cast<const iRRAM::REAL*>(data);
-      const int p_length = 1000000;
+      const int p_length = 1000;
       for (size_t i = 0; i < limit; ++i) {
         if (i > 0) strings::StrAppend(&ret, " ");
         string content = iRRAM::swrite(array[i], p_length);

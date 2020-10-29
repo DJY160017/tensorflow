@@ -792,6 +792,7 @@ Status DirectSession::Run(const RunOptions& run_options,
   TF_RETURN_IF_ERROR(GetOrCreateExecutors(input_tensor_names, output_names,
                                           target_nodes, &executors_and_keys,
                                           &run_state_args));
+  std::cout<<"direct_session: run 2 GetOrCreateExecutors end"<<std::endl;
   {
     mutex_lock l(collective_graph_key_lock_);
     collective_graph_key_ = executors_and_keys->collective_graph_key;
@@ -1301,12 +1302,14 @@ Status DirectSession::CreateExecutors(
     ek->items.resize(ek->items.size() + 1);
     auto* item = &(ek->items.back());
     auto lib = func_info->proc_flr->GetFLR(partition_name);
+    std::cout<<"direct_session: CreateExecutors test1"<<std::endl;
     if (lib == nullptr) {
       std::cout<<"direct_session: CreateExecutors error Could not find device:"<<partition_name<<std::endl;
       return errors::Internal("Could not find device: ", partition_name);
     }
     item->flib = lib;
 
+    std::cout<<"direct_session: CreateExecutors test2"<<std::endl;
     LocalExecutorParams params;
     params.device = device;
     params.session_metadata =
@@ -1347,9 +1350,10 @@ Status DirectSession::CreateExecutors(
       return Status::OK();
     };
 
+    std::cout<<"direct_session: CreateExecutors test3"<<std::endl;
     optimizer.Optimize(lib, options_.env, device, &partition_graph,
                        /*shape_map=*/nullptr);
-
+    std::cout<<"direct_session: CreateExecutors test4"<<std::endl;
     // TensorFlow Debugger (tfdbg) inserts debug nodes in the graph.
     const DebugOptions& debug_options =
         options.callable_options.run_options().debug_options();

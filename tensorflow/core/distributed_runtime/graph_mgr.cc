@@ -284,8 +284,10 @@ Status GraphMgr::InitItem(const string& handle, const GraphDef& gdef,
     if (unit->build_cost_model > 0) {
       skip_cost_models_ = false;
     }
+    std::cout<<"graph_mgr: before NewLocalExecutor"<<std::endl;
     TF_RETURN_IF_ERROR(
         NewLocalExecutor(params, std::move(subgraph), &unit->root));
+    std::cout<<"graph_mgr: after NewLocalExecutor"<<std::endl;
   }
   return Status::OK();
 }

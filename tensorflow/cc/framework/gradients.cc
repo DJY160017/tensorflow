@@ -30,6 +30,8 @@ limitations under the License.
 #include "tensorflow/core/lib/gtl/map_util.h"
 #include "tensorflow/core/platform/macros.h"
 
+#include <iostream>
+
 namespace tensorflow {
 namespace {
 

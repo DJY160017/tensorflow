@@ -16,6 +16,7 @@ limitations under the License.
 #include "tensorflow/core/common_runtime/eval_const_tensor.h"
 
 #include <deque>
+#include <iostream>
 
 #include "tensorflow/core/common_runtime/graph_runner.h"
 #include "tensorflow/core/common_runtime/shape_refiner.h"
@@ -49,12 +50,14 @@ Status TryToInferTensorOutputFromInputShapes(const Edge& edge,
   }
 
   if (node->type_string() == "Shape") {
+    std::cout<<"eval_const_tensor: TryToInferTensorOutputFromInputShapes shape"<<std::endl;
     // If input shapes to the shape op are fully defined,
     // we can infer the shape op's output tensor.
     bool fully_defined_inputs = c->FullyDefined(c->input(0));
     if (fully_defined_inputs) {
       int input_rank = c->Rank(c->input(0));
       Tensor t(node->output_type(0), TensorShape({input_rank}));
+      std::cout<<"eval_const_tensor: TryToInferTensorOutputFromInputShapes shape node type: "<<node->output_type(0)<<" tensor type: "<<t.dtype()<<std::endl;
       if (node->output_type(0) == DT_INT32) {
         auto flat = t.flat<int>();
         for (int i = 0; i < input_rank; i++) {
@@ -79,6 +82,7 @@ Status TryToInferTensorOutputFromInputShapes(const Edge& edge,
       *success = true;
     }
   } else if (node->type_string() == "Rank") {
+    std::cout<<"eval_const_tensor: TryToInferTensorOutputFromInputShapes rank"<<std::endl;
     bool rank_known = c->RankKnown(c->input(0));
     if (rank_known) {
       int32 input_rank = c->Rank(c->input(0));
@@ -88,6 +92,7 @@ Status TryToInferTensorOutputFromInputShapes(const Edge& edge,
       *success = true;
     }
   } else if (node->type_string() == "Size") {
+    std::cout<<"eval_const_tensor: TryToInferTensorOutputFromInputShapes size"<<std::endl;
     bool fully_defined_inputs = c->FullyDefined(c->input(0));
     if (fully_defined_inputs) {
       int32 rank = c->Rank(c->input(0));
@@ -352,6 +357,10 @@ Status EvaluateConstantTensor(OutputTensor tensor, const ShapeRefiner& refiner,
     // TODO(skyewm): Convert to std::make_unique when available.
     graph_runner_storage.reset(new GraphRunner(Env::Default()));
     graph_runner = graph_runner_storage.get();
+  }
+
+  for(auto pair : const_inputs){
+    std::cout<<"eval_const_tensor: EvaluateConstantTensor name: "<<pair.first << " type: "<<pair.second.dtype()<<std::endl;
   }
 
   // NOTE; we should pass in a function library runtime if we want

@@ -1461,6 +1461,7 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
 	std::cout<<"op_kernel: CreateOpKernel enter"<<std::endl;
   // Look up the Op registered for this op name.
   const OpDef* op_def = nullptr;
+  std::cout<<"op_kernel: CreateOpKernel look up op:"<<node_def.op()<<std::endl;
   Status s = OpRegistry::Global()->LookUpOpDef(node_def.op(), &op_def);
   if (!s.ok()) return s;
 	std::cout<<"op_kernel: CreateOpKernel look up op end"<<std::endl;
@@ -1523,6 +1524,7 @@ Status CreateOpKernel(DeviceType device_type, DeviceBase* device,
   if (!s.ok()) {
     delete *kernel;
     *kernel = nullptr;
+    std::cout<<"op_kernel: CreateOpKernel registration valid is not ok"<<std::endl;
   }
   return s;
 }

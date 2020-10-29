@@ -276,7 +276,7 @@ class TensorProtoHelper<iRRAM::REAL> : public std::true_type {
  public:
   static DataType GetDataType() { return DataType::DT_REAL; }
   static void AddValue(const iRRAM::REAL& value, TensorProto* proto) {
-    const int p_length = 1000000;
+    const int p_length = 1000;
     std::string content = iRRAM::swrite(value, p_length);
     *proto->mutable_string_val()->Add() = content;
   }

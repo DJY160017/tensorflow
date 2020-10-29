@@ -29,6 +29,8 @@ limitations under the License.
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/platform/macros.h"
 
+#include <iostream>
+
 namespace tensorflow {
 
 class StepStatsCollector;
@@ -112,13 +114,17 @@ class Executor {
 
   // Synchronous wrapper for RunAsync().
   Status Run(const Args& args) {
+    std::cout<<"executor.h: run enter"<<std::endl;
     Status ret;
     Notification n;
+    std::cout<<"executor.h: before RunAsync"<<std::endl;
     RunAsync(args, [&ret, &n](const Status& s) {
       ret = s;
       n.Notify();
     });
+    std::cout<<"executor.h: after RunAsync"<<std::endl;
     n.WaitForNotification();
+    std::cout<<"executor.h: run end"<<std::endl;
     return ret;
   }
 };
