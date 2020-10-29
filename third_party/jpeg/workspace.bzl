@@ -8,6 +8,7 @@ def repo():
         urls = [
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz",
             "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/2.0.4.tar.gz",
+            "http://172.19.240.140:8100/2.0.4.tar.gz",
         ],
         sha256 = "7777c3c19762940cff42b3ba4d7cd5c52d1671b39a79532050c85efb99079064",
         strip_prefix = "libjpeg-turbo-2.0.4",
