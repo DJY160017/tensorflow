@@ -646,6 +646,39 @@ TensorBuffer* FromProtoField<bfloat16>(Allocator* a, const TensorProto& in,
   return buf;
 }
 
+template <>
+TensorBuffer* FromProtoField<iRRAM::REAL>(Allocator* a, const TensorProto& in,
+                                      int64 n) {
+  CHECK_GT(n, 0);
+  Buffer<iRRAM::REAL>* buf = new Buffer<iRRAM::REAL>(a, n);
+  iRRAM::REAL* data = buf->template base<iRRAM::REAL>();
+  if (data == nullptr) {
+    buf->Unref();
+    return nullptr;
+  }
+  const int64 in_n = ProtoHelper<iRRAM::REAL>::NumElements(in);
+  if(n <= in_n){
+    for(int64 i = 0;i<n;i++){
+      std::string str_val = in.real_val(i);
+      data[i] = iRRAM::REAL(str_val);
+    }
+  }else if(in_n > 0){
+    for(int64 i = 0;i<in_n;i++){
+      std::string str_val = in.real_val(i);
+      data[i] = iRRAM::REAL(str_val);
+    }
+
+    for(int64 i= in_n;i<n;i++){
+      data[i] = iRRAM::REAL();
+    }
+  }else{
+    for(int64 i= 0;i<n;i++){
+      data[i] = iRRAM::REAL();
+    }
+  }
+  return buf;
+}
+
 // Copies T[n] stored in the buffer "in" into the repeated field in
 // "out" corresponding to type T.
 template <typename T>

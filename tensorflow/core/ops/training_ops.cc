@@ -72,7 +72,7 @@ REGISTER_OP("ApplyGradientDescent")
     .Input("alpha: T")
     .Input("delta: T")
     .Output("out: Ref(T)")
-    .Attr("T: numbertype")
+    .Attr("T: {numbertype, real}")
     .Attr("use_locking: bool = false")
     .SetShapeFn(ApplyGradientDescentShapeFn);
 
@@ -80,7 +80,7 @@ REGISTER_OP("ResourceApplyGradientDescent")
     .Input("var: resource")
     .Input("alpha: T")
     .Input("delta: T")
-    .Attr("T: numbertype")
+    .Attr("T: {numbertype, real}")
     .Attr("use_locking: bool = false")
     .SetShapeFn(ApplyGradientDescentShapeFn);
 

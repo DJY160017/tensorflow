@@ -17,6 +17,7 @@ limitations under the License.
 #define TENSORFLOW_CC_FRAMEWORK_OPS_H_
 
 #include <type_traits>
+#include <typeinfo>
 #include <iRRAM/lib.h>
 #include <iostream>
 
@@ -145,7 +146,7 @@ class Input {
                               std::is_convertible<T, string>::value>::type>
     Initializer(
         const std::initializer_list<T>& v) {  // NOLINT(runtime/explicit)
-      std::cout<<"Input::Initializer run 3"<<std::endl;
+      std::cout<<"Input::Initializer run 3 T is: "<<typeid(T).name()<<std::endl;
       typedef typename RealType<T>::type RealT;
       std::cout<<"Input::Initializer run 3->type map success"<<std::endl;
       Tensor t(DataTypeToEnum<RealT>::v(),

@@ -278,6 +278,7 @@ op {
         type: DT_COMPLEX64
         type: DT_COMPLEX128
         type: DT_STRING
+        type: DT_REAL
       }
     }
   }
@@ -21919,6 +21920,7 @@ op {
         type: DT_HALF
         type: DT_UINT32
         type: DT_UINT64
+        type: DT_REAL
       }
     }
   }
@@ -22313,6 +22315,7 @@ op {
         type: DT_INT64
         type: DT_COMPLEX64
         type: DT_COMPLEX128
+        type: DT_REAL
       }
     }
   }
@@ -23643,6 +23646,7 @@ op {
         type: DT_COMPLEX64
         type: DT_COMPLEX128
         type: DT_BOOL
+        type: DT_REAL
       }
     }
   }
@@ -30750,6 +30754,7 @@ op {
         type: DT_BFLOAT16
         type: DT_FLOAT
         type: DT_DOUBLE
+        type: DT_REAL
       }
     }
   }
@@ -30760,6 +30765,7 @@ op {
       list {
         type: DT_INT32
         type: DT_INT64
+        type: DT_REAL
       }
     }
   }
@@ -42597,6 +42603,7 @@ op {
         type: DT_INT64
         type: DT_COMPLEX64
         type: DT_COMPLEX128
+        type: DT_REAL
       }
     }
   }
@@ -42628,6 +42635,7 @@ op {
         type: DT_INT64
         type: DT_COMPLEX64
         type: DT_COMPLEX128
+        type: DT_REAL
       }
     }
   }
@@ -43439,6 +43447,7 @@ op {
         type: DT_BFLOAT16
         type: DT_FLOAT
         type: DT_DOUBLE
+        type: DT_REAL
       }
     }
   }
@@ -43452,6 +43461,7 @@ op {
       list {
         type: DT_INT32
         type: DT_INT64
+        type: DT_REAL
       }
     }
   }
@@ -43465,6 +43475,7 @@ op {
       list {
         type: DT_INT32
         type: DT_INT64
+        type: DT_REAL
       }
     }
   }
@@ -44388,6 +44399,7 @@ op {
         type: DT_INT64
         type: DT_COMPLEX64
         type: DT_COMPLEX128
+        type: DT_REAL
       }
     }
   }

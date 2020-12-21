@@ -25,6 +25,7 @@ limitations under the License.
 
 #include <algorithm>
 #include <type_traits>
+#include <iRRAM/lib.h>
 
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/lib/bfloat16/bfloat16.h"
@@ -41,6 +42,9 @@ PHILOX_DEVICE_INLINE bfloat16 Uint16ToGfloat16(uint16 x);
 PHILOX_DEVICE_INLINE float Uint32ToFloat(uint32 x);
 // Helper function to convert two 32-bit integers to a double between [0..1).
 PHILOX_DEVICE_INLINE double Uint64ToDouble(uint32 x0, uint32 x1);
+
+// Helper function to convert two 32-bit integers to a iRRAM::REAL between [0..1).
+PHILOX_DEVICE_INLINE iRRAM::REAL Uint64ToReal(uint32 x0, uint32 x1);
 
 // Computes a + b. Requires that the result is representable in the destination
 // type and that b is not maximal (i.e. b + 1 is not 0). Notably, the addend b
@@ -161,6 +165,30 @@ class UniformDistribution<Generator, double> {
     ResultType result;
     for (int i = 0; i < kResultElementCount; ++i) {
       result[i] = Uint64ToDouble(sample[2 * i], sample[2 * i + 1]);
+    }
+    return result;
+  }
+};
+
+template <class Generator>
+class UniformDistribution<Generator, iRRAM::REAL> {
+ public:
+  // The number of elements that will be returned.
+  static const int kResultElementCount = Generator::kResultElementCount / 2;
+  // Cost of generation of a single element (in cycles).
+  static const int kElementCost = 3;
+  // Indicate that this distribution may take variable number of samples
+  // during the runtime.
+  static const bool kVariableSamplesPerOutput = false;
+  typedef Array<iRRAM::REAL, kResultElementCount> ResultType;
+  typedef iRRAM::REAL ResultElementType;
+
+  PHILOX_DEVICE_INLINE
+  ResultType operator()(Generator* gen) {
+    typename Generator::ResultType sample = (*gen)();
+    ResultType result;
+    for (int i = 0; i < kResultElementCount; ++i) {
+      result[i] = Uint64ToReal(sample[2 * i], sample[2 * i + 1]);
     }
     return result;
   }
@@ -387,6 +415,10 @@ PHILOX_DEVICE_INLINE
 void BoxMullerDouble(uint32 x0, uint32 x1, uint32 x2, uint32 x3, double* d0,
                      double* d1);
 
+PHILOX_DEVICE_INLINE
+void BoxMullerReal(uint32 x0, uint32 x1, uint32 x2, uint32 x3, iRRAM::REAL* r0,
+                     iRRAM::REAL* r1);
+
 // Exactly like the float version, except that we convert to half afterwards;
 // since we don't have half-precision sin/cos even on GPUs, there's nothing to
 // gain from working in half internally.
@@ -491,6 +523,32 @@ class NormalDistribution<Generator, double> {
     for (int i = 0; i < kResultElementCount; i += 2) {
       const int i2 = 2 * i;
       BoxMullerDouble(sample[i2], sample[i2 + 1], sample[i2 + 2],
+                      sample[i2 + 3], &result[i], &result[i + 1]);
+    }
+    return result;
+  }
+};
+
+template <class Generator>
+class NormalDistribution<Generator, iRRAM::REAL> {
+ public:
+  // The number of elements that will be returned.
+  static const int kResultElementCount = Generator::kResultElementCount / 2;
+  // Cost of generation of a single element (in cycles).
+  static const int kElementCost = 70;
+  // Indicate that this distribution may take variable number of samples
+  // during the runtime.
+  static const bool kVariableSamplesPerOutput = false;
+  typedef Array<iRRAM::REAL, kResultElementCount> ResultType;
+  typedef iRRAM::REAL ResultElementType;
+
+  PHILOX_DEVICE_INLINE
+  ResultType operator()(Generator* gen) {
+    typename Generator::ResultType sample = (*gen)();
+    ResultType result;
+    for (int i = 0; i < kResultElementCount; i += 2) {
+      const int i2 = 2 * i;
+      BoxMullerReal(sample[i2], sample[i2 + 1], sample[i2 + 2],
                       sample[i2 + 3], &result[i], &result[i + 1]);
     }
     return result;
@@ -699,6 +757,51 @@ class TruncatedNormalDistribution<SingleSampleGenerator, double> {
   }
 };
 
+template <class SingleSampleGenerator>
+class TruncatedNormalDistribution<SingleSampleGenerator, iRRAM::REAL> {
+ public:
+  // The number of elements that will be returned.
+  static const int kResultElementCount =
+      (SingleSampleGenerator::kNativeElementCount > 1)
+          ? SingleSampleGenerator::kNativeElementCount / 2
+          : 1;
+  // Cost of generation of a single element (in cycles).
+  static const int kElementCost = 90;
+  // Indicate that this distribution may take variable number of samples
+  // during the runtime.
+  static const bool kVariableSamplesPerOutput = true;
+  typedef Array<iRRAM::REAL, kResultElementCount> ResultType;
+  typedef iRRAM::REAL ResultElementType;
+  const iRRAM::REAL kTruncateValue = 2.0;
+
+  PHILOX_DEVICE_INLINE
+  ResultType operator()(SingleSampleGenerator* gen) {
+    ResultType results;
+    int index = 0;
+    while (1) {
+      const uint32 x0 = (*gen)();
+      const uint32 x1 = (*gen)();
+      const uint32 x2 = (*gen)();
+      const uint32 x3 = (*gen)();
+      iRRAM::REAL r[2];
+      BoxMullerReal(x0, x1, x2, x3, &r[0], &r[1]);
+
+      if (iRRAM::abs(r[0]) < kTruncateValue) {
+        results[index++] = r[0];
+        if (index >= kResultElementCount) {
+          return results;
+        }
+      }
+      if (iRRAM::abs(r[1]) < kTruncateValue) {
+        results[index++] = r[1];
+        if (index >= kResultElementCount) {
+          return results;
+        }
+      }
+    }
+  }
+};
+
 // Helper function to convert two 32-bit uniform integers to two floats
 // under the unit normal distribution.
 PHILOX_DEVICE_INLINE
@@ -748,6 +851,27 @@ void BoxMullerDouble(uint32 x0, uint32 x1, uint32 x2, uint32 x3, double* d0,
 #endif
   *d0 *= u2;
   *d1 *= u2;
+}
+
+PHILOX_DEVICE_INLINE
+void BoxMullerReal(uint32 x0, uint32 x1, uint32 x2, uint32 x3, iRRAM::REAL* r0,
+                     iRRAM::REAL* r1) {
+  const iRRAM::REAL epsilon = 1.0e-7;
+  iRRAM::REAL u1 = Uint64ToReal(x0, x1);
+  if (u1 < epsilon) {
+    u1 = epsilon;
+  }
+  const iRRAM::REAL v1 = 2 * M_PI * Uint64ToDouble(x2, x3);
+  const iRRAM::REAL u2 = iRRAM::sqrt(-2.0 * iRRAM::log(u1));
+  #if defined(TENSORFLOW_USE_SYCL) || !defined(__linux__)
+    *r0 = iRRAM::sin(v1);
+    *r1 = iRRAM::cos(v1);
+  #else
+    *r0 = iRRAM::sin(v1);
+    *r1 = iRRAM::cos(v1);
+  #endif
+    *r0 *= u2;
+    *r1 *= u2;
 }
 
 // Helper function to convert an 16-bit integer to a half between [0..1).
@@ -823,6 +947,15 @@ PHILOX_DEVICE_INLINE double Uint64ToDouble(uint32 x0, uint32 x1) {
   double result;
   memcpy(&result, &val, sizeof(val));
   return result - 1.0;
+}
+
+// Helper function to convert two 32-bit integers to a iRRAM::REAL between [0..1).
+PHILOX_DEVICE_INLINE iRRAM::REAL Uint64ToReal(uint32 x0, uint32 x1){
+  double val = Uint64ToDouble(x0, x1);
+  // Assumes that endian-ness is same for double and uint64.
+  iRRAM::REAL result;
+  result = val;
+  return result;
 }
 
 }  // namespace random

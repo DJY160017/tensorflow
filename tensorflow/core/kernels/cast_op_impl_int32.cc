@@ -22,6 +22,7 @@ typedef Eigen::GpuDevice GPUDevice;
 
 CastFunctorType GetCpuCastFromInt32(DataType dst_dtype) {
   CURRY_TYPES3(CAST_CASE, CPUDevice, int32);
+  CURRY_TYPES_FOR_REAL(CAST_CASE, CPUDevice, int32);
   return nullptr;
 }
 

@@ -31,6 +31,7 @@ namespace tensorflow {
           .TypeConstraint<int64>("Tidx"),                                      \
       ReductionOp<CPUDevice, type, int64, Eigen::internal::MaxReducer<type>>);
 TF_CALL_REAL_NUMBER_TYPES(REGISTER_CPU_KERNELS);
+TF_CALL_REAL(REGISTER_CPU_KERNELS);
 #undef REGISTER_CPU_KERNELS
 
 #if GOOGLE_CUDA || TENSORFLOW_USE_ROCM

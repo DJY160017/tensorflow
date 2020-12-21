@@ -37,6 +37,8 @@ limitations under the License.
 #include "tensorflow/core/lib/gtl/inlined_vector.h"
 #include "tensorflow/core/platform/logging.h"
 
+#include <iRRAM/lib.h>
+
 namespace tensorflow {
 
 typedef Eigen::ThreadPoolDevice CPUDevice;

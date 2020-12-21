@@ -17,6 +17,7 @@ limitations under the License.
 
 #define EIGEN_USE_THREADS
 
+#include <iRRAM/lib.h>
 #include "tensorflow/core/kernels/l2loss_op.h"
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/framework/numeric_op.h"
@@ -55,6 +56,7 @@ class L2LossOp<CPUDevice, T> : public OpKernel {
 REGISTER_KERNEL(float);
 REGISTER_KERNEL(double);
 REGISTER_KERNEL(Eigen::half);
+REGISTER_KERNEL(iRRAM::REAL);
 #undef REGISTER_KERNEL
 
 }  // namespace tensorflow

@@ -19,6 +19,8 @@ limitations under the License.
 // Functor definitions for Reduction ops, must be compilable by nvcc.
 
 #include <iostream>
+#include <iRRAM/lib.h>
+#include <typeinfo>
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/framework/op_kernel.h"
 #include "tensorflow/core/framework/tensor_types.h"
@@ -59,6 +61,25 @@ struct ReduceEigenImpl<Device, OUT_T, IN_T, ReductionAxes,
     Eigen::internal::SumReducer<Scalar> sum_reducer;
     out.device(d) = in.reduce(reduction_axes, sum_reducer) /
                     static_cast<Scalar>(in.size() / out.size());
+  }
+};
+
+template <typename Device, typename OUT_T, typename IN_T,
+          typename ReductionAxes>
+struct ReduceEigenImpl<Device, OUT_T, IN_T, ReductionAxes,
+                       functor::MeanReducer<iRRAM::REAL>> {
+  void operator()(const Device& d, OUT_T out, IN_T in,
+                  const ReductionAxes& reduction_axes,
+                  const functor::MeanReducer<iRRAM::REAL>& reducer) {
+    // static_assert(std::is_same<iRRAM::REAL, typename OUT_T::iRRAM::REAL>::value, "");
+    Eigen::internal::SumReducer<iRRAM::REAL> sum_reducer;
+    iRRAM::REAL denominator = static_cast<double>(in.size()/out.size());
+    iRRAM::REAL other = denominator;
+    auto denominator_str = iRRAM::swrite(denominator, 100);
+    std::cout<<"ReduceEigenImp: denominator: "<<denominator_str<<std::endl;
+    auto test_pre = in.reduce(reduction_axes, sum_reducer);
+    std::cout<<"ReduceEigenImp: test_pre type info is "<<typeid(test_pre).name()<<std::endl;
+    out.device(d) = test_pre / denominator;
   }
 };
 

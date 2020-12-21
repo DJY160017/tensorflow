@@ -46,7 +46,7 @@ CAST_FUNCTORS(Eigen::SyclDevice);
   FN(arg0, arg1, float);                     \
   FN(arg0, arg1, double);                    \
   FN(arg0, arg1, std::complex<float>);       \
-  FN(arg0, arg1, std::complex<double>)
+  FN(arg0, arg1, std::complex<double>);
 
 #define CURRY_TYPES3_NO_BF16(FN, arg0, arg1) \
   CURRY_TYPES3_NO_HALF(FN, arg0, arg1)       \
@@ -55,6 +55,9 @@ CAST_FUNCTORS(Eigen::SyclDevice);
 #define CURRY_TYPES3(FN, arg0, arg1)   \
   CURRY_TYPES3_NO_BF16(FN, arg0, arg1) \
   FN(arg0, arg1, bfloat16);
+
+#define CURRY_TYPES_FOR_REAL(FN, arg0, arg1)   \
+  FN(arg0, arg1, iRRAM::REAL);
 
 #define CAST_CASE(DEVICE, IN, OUT)                                        \
   if (DataTypeToEnum<OUT>::value == dst_dtype) {                          \

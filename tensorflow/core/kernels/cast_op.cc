@@ -124,6 +124,8 @@ CpuCastOp::CpuCastOp(OpKernelConstruction* ctx) : CastOpBase(ctx) {
 }
 
 Status CpuCastOp::Prepare() {
+  std::cout<<"CpuCastOp: Prepare external_src_dtype_: "<<external_src_dtype_<<" external_dst_dtype_: "<<external_dst_dtype_<<" src_dtype_: "<<src_dtype_<<std::endl;
+
   if (external_src_dtype_ == external_dst_dtype_) {
     work_ = nullptr;  // Identity
     return Status::OK();

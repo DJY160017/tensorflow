@@ -35,6 +35,7 @@ limitations under the License.
 #include "tensorflow/core/kernels/fill_functor.h"
 #include "tensorflow/core/platform/logging.h"
 #include "tensorflow/core/util/bcast.h"
+#include <iRRAM/lib.h>
 
 namespace tensorflow {
 

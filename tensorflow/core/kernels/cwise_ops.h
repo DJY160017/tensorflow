@@ -19,6 +19,7 @@ limitations under the License.
 #include <cmath>
 #include <functional>
 #include <type_traits>
+#include <iRRAM/lib.h>
 
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 
@@ -88,6 +89,28 @@ struct functor_traits<scalar_atanh_op<T>> {
   enum { Cost = 5 * NumTraits<T>::MulCost, PacketAccess = false };
 };
 #endif
+
+
+template <typename Scalar, typename Exponent>
+struct scalar_real_pow_op {
+  #ifndef EIGEN_SCALAR_BINARY_OP_PLUGIN
+    EIGEN_EMPTY_STRUCT_CTOR(scalar_real_pow_op)
+  #else
+    scalar_real_pow_op() {
+      typedef Scalar LhsScalar;
+      typedef Exponent RhsScalar;
+      EIGEN_SCALAR_BINARY_OP_PLUGIN
+    }
+  #endif
+  EIGEN_DEVICE_FUNC inline Scalar operator()(const Scalar& a, const Exponent& b) const {
+    return iRRAM::power(a, b);
+  }
+};
+
+template <typename Scalar, typename Exponent>
+struct functor_traits<scalar_real_pow_op<Scalar, Exponent>> {
+  enum { Cost = 5 * NumTraits<Scalar>::MulCost, PacketAccess = false };
+};
 
 template <typename Scalar, typename Exponent>
 struct safe_scalar_binary_pow_op {
@@ -325,6 +348,18 @@ struct equal_to : std::binary_function<T, T, bool> {
   EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool operator()(const T& x,
                                                         const T& y) const {
     return x == y;
+  }
+};
+
+template <>
+struct equal_to<iRRAM::REAL> : std::binary_function<iRRAM::REAL, iRRAM::REAL, bool> {
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE bool operator()(const iRRAM::REAL& x,
+                                                        const iRRAM::REAL& y) const {
+    if(!(x<y) and !(y>x)){
+      return true;
+    }else{
+      return false;
+    }
   }
 };
 
@@ -728,6 +763,136 @@ struct functor_traits<xdivy_op<Scalar>> {
   };
 };
 
+
+template <typename Scalar>
+struct scalar_real_tanh_op {
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_real_tanh_op)
+  EIGEN_DEVICE_FUNC inline const Scalar operator()(const Scalar& a) const {
+    std::string result = iRRAM::swrite(a, 1000);
+    std::cout<<"scalar_real_tanh_op: a is"<<result<<std::endl;
+    return iRRAM::tanh(a);
+  }
+  template <typename Packet>
+  EIGEN_DEVICE_FUNC inline Packet packetOp(const Packet& x) const {
+    return iRRAM::tanh(x); 
+  }
+};
+
+template <typename Scalar>
+struct functor_traits<scalar_real_tanh_op<Scalar> > {
+  enum {
+    PacketAccess = packet_traits<Scalar>::HasTanh,
+    Cost = ( (EIGEN_FAST_MATH && is_same<Scalar,float>::value)
+// The following numbers are based on the AVX implementation,
+#ifdef EIGEN_VECTORIZE_FMA
+                // Haswell can issue 2 add/mul/madd per cycle.
+                // 9 pmadd, 2 pmul, 1 div, 2 other
+                ? (2 * NumTraits<Scalar>::AddCost +
+                   6 * NumTraits<Scalar>::MulCost +
+                   scalar_div_cost<Scalar,packet_traits<Scalar>::HasDiv>::value)
+#else
+                ? (11 * NumTraits<Scalar>::AddCost +
+                   11 * NumTraits<Scalar>::MulCost +
+                   scalar_div_cost<Scalar,packet_traits<Scalar>::HasDiv>::value)
+#endif
+                // This number assumes a naive implementation of tanh
+                : (6 * NumTraits<Scalar>::AddCost +
+                   3 * NumTraits<Scalar>::MulCost +
+                   2 * scalar_div_cost<Scalar,packet_traits<Scalar>::HasDiv>::value +
+                   functor_traits<scalar_exp_op<Scalar> >::Cost))
+  };
+};
+
+template<typename Scalar> struct scalar_real_log_op {
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_real_log_op)
+  EIGEN_DEVICE_FUNC inline const Scalar operator() (const Scalar& a) const { return iRRAM::log(a); }
+  template <typename Packet>
+  EIGEN_DEVICE_FUNC inline Packet packetOp(const Packet& a) const { return iRRAM::log(a); }
+};
+template <typename Scalar>
+struct functor_traits<scalar_real_log_op<Scalar> > {
+  enum {
+    PacketAccess = packet_traits<Scalar>::HasLog,
+    Cost =
+    (PacketAccess
+     // The following numbers are based on the AVX implementation.
+#ifdef EIGEN_VECTORIZE_FMA
+     // 8 pmadd, 6 pmul, 8 padd/psub, 16 other, can issue 2 add/mul/madd per cycle.
+     ? (20 * NumTraits<Scalar>::AddCost + 7 * NumTraits<Scalar>::MulCost)
+#else
+     // 8 pmadd, 6 pmul, 8 padd/psub, 20 other
+     ? (36 * NumTraits<Scalar>::AddCost + 14 * NumTraits<Scalar>::MulCost)
+#endif
+     // Measured cost of std::log.
+     : sizeof(Scalar)==4 ? 40 : 85)
+  };
+};
+
+
+template<typename LhsScalar,typename RhsScalar>
+struct scalar_real_max_op  : binary_op_base<LhsScalar,RhsScalar>
+{
+  typedef typename ScalarBinaryOpTraits<LhsScalar,RhsScalar,scalar_real_max_op>::ReturnType result_type;
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_real_max_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const result_type operator() (const LhsScalar& a, const RhsScalar& b) const { 
+    if(a > b){return a;}
+
+    if(b > a){return b;}
+
+    return a;
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a, const Packet& b) const{ 
+    if(a > b){return a;}
+
+    if(b > a){return b;}
+
+    return a;
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const result_type predux(const Packet& a) const
+  { return a; }
+};
+template<typename LhsScalar,typename RhsScalar>
+struct functor_traits<scalar_real_max_op<LhsScalar,RhsScalar> > {
+  enum {
+    Cost = (NumTraits<LhsScalar>::AddCost+NumTraits<RhsScalar>::AddCost)/2,
+    PacketAccess = internal::is_same<LhsScalar, RhsScalar>::value && packet_traits<LhsScalar>::HasMax
+  };
+};
+
+template<typename LhsScalar,typename RhsScalar>
+struct scalar_real_min_op : binary_op_base<LhsScalar,RhsScalar>
+{
+  typedef typename ScalarBinaryOpTraits<LhsScalar,RhsScalar,scalar_real_min_op>::ReturnType result_type;
+  EIGEN_EMPTY_STRUCT_CTOR(scalar_real_min_op)
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const result_type operator() (const LhsScalar& a, const RhsScalar& b) const {
+    if(a < b){return a;}
+
+    if(a > b){return b;} 
+
+    return a; 
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const Packet packetOp(const Packet& a, const Packet& b) const{ 
+    if(a < b){return a;}
+
+    if(a > b){return b;} 
+
+    return a;  
+  }
+  template<typename Packet>
+  EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE const result_type predux(const Packet& a) const
+  { return a; }
+};
+template<typename LhsScalar,typename RhsScalar>
+struct functor_traits<scalar_real_min_op<LhsScalar,RhsScalar> > {
+  enum {
+    Cost = (NumTraits<LhsScalar>::AddCost+NumTraits<RhsScalar>::AddCost)/2,
+    PacketAccess = internal::is_same<LhsScalar, RhsScalar>::value && packet_traits<LhsScalar>::HasMin
+  };
+};
+
 }  // end namespace internal
 }  // end namespace Eigen
 
@@ -837,6 +1002,9 @@ struct expm1 : base<T, Eigen::internal::scalar_expm1_op<T>> {};
 template <typename T>
 struct log : base<T, Eigen::internal::scalar_log_op<T>> {};
 
+template <>
+struct log<iRRAM::REAL> : base<iRRAM::REAL, Eigen::internal::scalar_real_log_op<iRRAM::REAL>> {};
+
 template <typename T>
 struct log1p : base<T, Eigen::internal::scalar_log1p_op<T>> {};
 
@@ -851,6 +1019,9 @@ struct cosh : base<T, Eigen::internal::scalar_cosh_op<T>> {};
 
 template <typename T>
 struct tanh : base<T, Eigen::internal::scalar_tanh_op<T>> {};
+
+template <>
+struct tanh<iRRAM::REAL> : base<iRRAM::REAL, Eigen::internal::scalar_real_tanh_op<iRRAM::REAL>> {};
 
 template <typename T>
 struct asinh : base<T, Eigen::internal::scalar_asinh_op<T>> {};
@@ -1040,6 +1211,9 @@ struct floor_div_real : base<T, Eigen::internal::google_floor_div_real<T>> {};
 template <typename T>
 struct pow : base<T, Eigen::internal::scalar_pow_op<T, T>> {};
 
+template <>
+struct pow<iRRAM::REAL> : base<iRRAM::REAL, Eigen::internal::scalar_real_pow_op<iRRAM::REAL, iRRAM::REAL>> {};
+
 template <typename T>
 struct safe_pow : base<T, Eigen::internal::safe_scalar_binary_pow_op<T, T>> {
   static const bool has_errors = true;
@@ -1048,8 +1222,14 @@ struct safe_pow : base<T, Eigen::internal::safe_scalar_binary_pow_op<T, T>> {
 template <typename T>
 struct maximum : base<T, Eigen::internal::scalar_max_op<T>> {};
 
+template <>
+struct maximum<iRRAM::REAL> : base<iRRAM::REAL, Eigen::internal::scalar_real_max_op<iRRAM::REAL, iRRAM::REAL>> {};
+
 template <typename T>
 struct minimum : base<T, Eigen::internal::scalar_min_op<T>> {};
+
+template <>
+struct minimum<iRRAM::REAL> : base<iRRAM::REAL, Eigen::internal::scalar_real_min_op<iRRAM::REAL,iRRAM::REAL>> {};
 
 template <typename T>
 struct igamma : base<T, Eigen::internal::scalar_igamma_op<T>> {};

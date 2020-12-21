@@ -56,8 +56,8 @@ REGISTER_OP("RandomStandardNormal")
     .Output("output: dtype")
     .Attr("seed: int = 0")
     .Attr("seed2: int = 0")
-    .Attr("dtype: {half,bfloat16,float,double}")
-    .Attr("T: {int32, int64}")
+    .Attr("dtype: {half,bfloat16,float,double,real}")
+    .Attr("T: {int32, int64,real}")
     .SetShapeFn(shape_inference::RandomShape);
 
 REGISTER_OP("ParameterizedTruncatedNormal")

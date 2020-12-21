@@ -32,6 +32,7 @@ meta_graphs {
               type: DT_COMPLEX64
               type: DT_COMPLEX128
               type: DT_STRING
+              type: DT_REAL
             }
           }
         }

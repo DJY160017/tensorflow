@@ -15,6 +15,7 @@ limitations under the License.
 
 #include "tensorflow/cc/framework/ops.h"
 #include "tensorflow/core/lib/hash/hash.h"
+#include <iostream>
 
 namespace tensorflow {
 

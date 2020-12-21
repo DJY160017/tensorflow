@@ -170,6 +170,11 @@ std::vector<bool> SymbolicGradientBuilder::GetReachableNodes() {
   std::vector<bool> reachable_nodes(scope_.graph()->num_node_ids(), false);
   std::deque<Node*> queue;
   for (const Output& out : outputs_) {
+    if(out.node() == NULL){
+      std::cout<<"gradients: SymbolicGradientBuilder GetReachableNodes out.node is null"<<std::endl;
+    }else{
+      std::cout<<"gradients: SymbolicGradientBuilder GetReachableNodes out.node is "<<out.node()->id()<<" reachable_nodes size is "<<reachable_nodes.size()<<std::endl;
+    }
     if (!reachable_nodes[out.node()->id()]) {
       queue.push_back(out.node());
       reachable_nodes[out.node()->id()] = true;

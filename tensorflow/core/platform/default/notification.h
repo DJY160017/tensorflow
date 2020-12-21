@@ -23,6 +23,8 @@ limitations under the License.
 
 #include "tensorflow/core/platform/mutex.h"
 #include "tensorflow/core/platform/types.h"
+#include <iostream>
+#include <iRRAM/lib.h>
 
 namespace tensorflow {
 

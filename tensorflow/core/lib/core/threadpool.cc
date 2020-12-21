@@ -14,6 +14,8 @@ limitations under the License.
 ==============================================================================*/
 
 #include "tensorflow/core/lib/core/threadpool.h"
+#include <iRRAM/lib.h>
+#include <iostream>
 
 #define EIGEN_USE_THREADS
 
@@ -41,6 +43,11 @@ struct EigenEnvironment {
     std::unique_ptr<TaskImpl> f;
   };
 
+  static int iRRAM_thread_local_compute(const std::function<void()>& f){
+    f();
+    return 0;
+  }
+
   Env* const env_;
   const ThreadOptions thread_options_;
   const string name_;
@@ -58,7 +65,14 @@ struct EigenEnvironment {
       if (thread_options_.numa_node != port::kNUMANoAffinity) {
         port::NUMASetThreadNodeAffinity(thread_options_.numa_node);
       }
-      f();
+
+      std::cout<<"threadpool: init iRRAM start thread name: "<<name_<<std::endl;
+      const std::function<void()>& f_const = f;
+      int argc = 0;
+      char** argv = nullptr;
+      iRRAM_initialize(argc,argv);
+      iRRAM::iRRAM_exec(iRRAM_thread_local_compute, f_const);
+      std::cout<<"threadpool: init iRRAM end thread name: "<<name_<<std::endl;
     });
   }
 

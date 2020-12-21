@@ -782,7 +782,7 @@ REGISTER_OP("OnesLike")
     .Output("y: T")
     .Attr(
         "T: {bfloat16, half, float, double, int8, uint8, int16, uint16, int32, "
-        "int64, complex64, complex128, bool}")
+        "int64, complex64, complex128, bool, real}")
     .SetShapeFn(shape_inference::UnchangedShape);
 
 // --------------------------------------------------------------------------

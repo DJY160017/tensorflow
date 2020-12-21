@@ -29,7 +29,7 @@ REGISTER_OP("AddN")
     .Input("inputs: N * T")
     .Output("sum: T")
     .Attr("N: int >= 1")
-    .Attr("T: {numbertype, variant}")
+    .Attr("T: {numbertype, variant, real}")
     .SetIsCommutative()
     .SetIsAggregate()
     .SetShapeFn([](InferenceContext* c) {
@@ -195,7 +195,7 @@ _HostCast requires its input and produces its output in host memory.
 REGISTER_OP("Abs")
     .Input("x: T")
     .Output("y: T")
-    .Attr("T: {bfloat16, half, float, double, int32, int64}")
+    .Attr("T: {bfloat16, half, float, double, int32, int64, real}")
     .SetShapeFn(shape_inference::UnchangedShape);
 
 REGISTER_OP("ComplexAbs")
@@ -211,26 +211,26 @@ REGISTER_OP("ComplexAbs")
       .Output("y: T")                                                    \
       .Attr(                                                             \
           "T: {bfloat16, half, float, double, int32, int64, complex64, " \
-          "complex128}")                                                 \
+          "complex128, real}")                                           \
       .SetShapeFn(shape_inference::UnchangedShape)
 
-#define UNARY_REAL()                              \
-  Input("x: T")                                   \
-      .Output("y: T")                             \
-      .Attr("T: {bfloat16, half, float, double}") \
+#define UNARY_REAL()                                    \
+  Input("x: T")                                         \
+      .Output("y: T")                                   \
+      .Attr("T: {bfloat16, half, float, double, real}") \
       .SetShapeFn(shape_inference::UnchangedShape)
 
-#define UNARY_COMPLEX()                                                  \
-  Input("x: T")                                                          \
-      .Output("y: T")                                                    \
-      .Attr("T: {bfloat16, half, float, double, complex64, complex128}") \
+#define UNARY_COMPLEX()                                                        \
+  Input("x: T")                                                                \
+      .Output("y: T")                                                          \
+      .Attr("T: {bfloat16, half, float, double, complex64, complex128, real}") \
       .SetShapeFn(shape_inference::UnchangedShape)
 
-#define UNARY_GRADIENT_COMPLEX()                                         \
-  Input("y: T")                                                          \
-      .Input("dy: T")                                                    \
-      .Output("z: T")                                                    \
-      .Attr("T: {bfloat16, half, float, double, complex64, complex128}") \
+#define UNARY_GRADIENT_COMPLEX()                                               \
+  Input("y: T")                                                                \
+      .Input("dy: T")                                                          \
+      .Output("z: T")                                                          \
+      .Attr("T: {bfloat16, half, float, double, complex64, complex128, real}") \
       .SetShapeFn(shape_inference::UnchangedShape)
 
 REGISTER_OP("Neg").UNARY();
@@ -369,12 +369,12 @@ REGISTER_OP("Rint")
 #define BINARY_MORE()                                                          \
   Input("x: T").Input("y: T").Output("z: T").Attr(                             \
       "T: {bfloat16, half, float, double, uint8, int8, uint16, int16, int32, " \
-      "int64, complex64, complex128}")
+      "int64, complex64, complex128, real}")
 
 #define BINARY_FEWER()                                               \
   Input("x: T").Input("y: T").Output("z: T").Attr(                   \
       "T: {bfloat16, half, float, double, int32, int64, complex64, " \
-      "complex128}")
+      "complex128, real}")
 
 REGISTER_OP("Add")
     .Input("x: T")
@@ -382,7 +382,7 @@ REGISTER_OP("Add")
     .Output("z: T")
     .Attr(
         "T: {bfloat16, half, float, double, uint8, int8, int16, int32, int64, "
-        "complex64, complex128, string}")
+        "complex64, complex128, string, real}")
     .SetShapeFn(shape_inference::BroadcastBinaryOpShapeFn);
 
 // TODO(rmlarsen): Add a Python wrapper that swiches non-string instances to
@@ -393,7 +393,7 @@ REGISTER_OP("AddV2")
     .Output("z: T")
     .Attr(
         "T: {bfloat16, half, float, double, uint8, int8, int16, int32, int64, "
-        "complex64, complex128}")
+        "complex64, complex128, real}")
     .SetShapeFn(shape_inference::BroadcastBinaryOpShapeFn)
     .SetIsAggregate()
     .SetIsCommutative();
@@ -408,7 +408,7 @@ REGISTER_OP("_MklAdd")
     .Output("mkl_z: uint8")
     .Attr(
         "T: {half, float, double, uint8, int8, int16, int32, int64, complex64, "
-        "complex128, string, bfloat16}")
+        "complex128, string, bfloat16, real}")
     .SetShapeFn(shape_inference::BroadcastBinaryOpShapeFn)
     .Doc(R"doc(
 Returns `x` + `y` element-wise.
@@ -426,7 +426,7 @@ REGISTER_OP("_MklAddV2")
     .Output("mkl_z: uint8")
     .Attr(
         "T: {bfloat16, half, float, double, uint8, int8, int16, int32, int64, "
-        "complex64, complex128}")
+        "complex64, complex128, real}")
     .SetShapeFn(shape_inference::BroadcastBinaryOpShapeFn)
     .SetIsAggregate()
     .SetIsCommutative();
@@ -702,7 +702,7 @@ REGISTER_OP("GreaterEqual").COMPARISON();
       .Attr(                                                               \
           "T: {bfloat16, half, float, double, uint8, int8, int16, int32, " \
           "int64, complex64, quint8, qint8, qint32, string, bool, "        \
-          "complex128}")                                                   \
+          "complex128, real}")                                                   \
       .Attr("incompatible_shape_error: bool = true")                       \
       .SetShapeFn([](InferenceContext* c) {                                \
         ShapeHandle x = c->input(0);                                       \
@@ -982,8 +982,8 @@ REGISTER_OP("Mean")
     .Input("reduction_indices: Tidx")
     .Output("output: T")
     .Attr("keep_dims: bool = false")
-    .Attr("T: numbertype")
-    .Attr("Tidx: {int32, int64} = DT_INT32")
+    .Attr("T: {numbertype, real}")
+    .Attr("Tidx: {int32, int64, real}")
     .SetShapeFn(shape_inference::ReductionShape);
 
 REGISTER_OP("Prod")
@@ -1000,7 +1000,7 @@ REGISTER_OP("Min")
     .Input("reduction_indices: Tidx")
     .Output("output: T")
     .Attr("keep_dims: bool = false")
-    .Attr("T: numbertype")
+    .Attr("T: {numbertype, real}")
     .Attr("Tidx: {int32, int64} = DT_INT32")
     .SetShapeFn(shape_inference::ReductionShape);
 
@@ -1009,7 +1009,7 @@ REGISTER_OP("Max")
     .Input("reduction_indices: Tidx")
     .Output("output: T")
     .Attr("keep_dims: bool = false")
-    .Attr("T: numbertype")
+    .Attr("T: {numbertype, real}")
     .Attr("Tidx: {int32, int64} = DT_INT32")
     .SetShapeFn(shape_inference::ReductionShape);
 

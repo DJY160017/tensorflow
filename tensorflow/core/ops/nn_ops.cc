@@ -754,7 +754,7 @@ REGISTER_OP("MaxPool3DGradGrad")
 REGISTER_OP("L2Loss")
     .Input("t: T")
     .Output("output: T")
-    .Attr("T: {half, bfloat16, float, double}")
+    .Attr("T: {half, bfloat16, float, double, real}")
     .SetShapeFn(shape_inference::ScalarShape);
 
 // --------------------------------------------------------------------------

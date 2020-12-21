@@ -594,10 +594,10 @@ struct GemmKernelProvider<Eigen::QInt32, Eigen::QInt8, Eigen::QUInt8,
       return block_mem;                                                        \
     }                                                                          \
                                                                                \
-    template <typename Device>                                                 \
-    EIGEN_DEVICE_FUNC void deallocate(Device& d, BlockMemHandle handle) {      \
-      BlockMemAllocator::deallocate(d, handle);                                \
-    }                                                                          \
+     template <typename Device>                                                 \
+    EIGEN_DEVICE_FUNC void deallocate(Device& d, BlockMemHandle handle, size_t length = 0) {      \
+        BlockMemAllocator::deallocate(d, handle);                              \
+    }                                                                          \       
                                                                                \
     EIGEN_DEVICE_FUNC EIGEN_DONT_INLINE void packLhs(                          \
         LhsBlock* lhsBlock, const typename LhsMapper::SubMapper& data_mapper,  \
@@ -780,8 +780,12 @@ struct GemmKernelProvider<Eigen::QInt32, Eigen::QInt8, Eigen::QUInt8,
     }                                                                          \
                                                                                \
     template <typename Device>                                                 \
-    EIGEN_DEVICE_FUNC void deallocate(Device& d, BlockMemHandle handle) {      \
-      BlockMemAllocator::deallocate(d, handle);                                \
+    EIGEN_DEVICE_FUNC void deallocate(Device& d, BlockMemHandle handle, size_t length = 0) {      \
+      if(length == 0){                                                         \
+        BlockMemAllocator::deallocate(d, handle);                              \
+      }else{                                                                   \
+        BlockMemAllocator::deallocate_for_real(d, handle, length);             \
+      }                                                                        \
     }                                                                          \
                                                                                \
     EIGEN_DEVICE_FUNC EIGEN_DONT_INLINE void packLhs(                          \

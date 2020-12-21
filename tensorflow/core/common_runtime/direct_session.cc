@@ -791,7 +791,7 @@ Status DirectSession::Run(const RunOptions& run_options,
 
   TF_RETURN_IF_ERROR(GetOrCreateExecutors(input_tensor_names, output_names,
                                           target_nodes, &executors_and_keys,
-                                          &run_state_args));
+                                          &run_state_args));                                        
   std::cout<<"direct_session: run 2 GetOrCreateExecutors end"<<std::endl;
   {
     mutex_lock l(collective_graph_key_lock_);

@@ -41,9 +41,9 @@ static Status StatelessShape(InferenceContext* c) {
       .Input("shape: T")                                      \
       .Input("seed: Tseed")                                   \
       .Output("output: dtype")                                \
-      .Attr("dtype: {half,bfloat16,float,double} = DT_FLOAT") \
-      .Attr("T: {int32, int64} = DT_INT32")                   \
-      .Attr("Tseed: {int32, int64} = DT_INT64")               \
+      .Attr("dtype: {half,bfloat16,float,double,real}")       \
+      .Attr("T: {int32, int64, real}")                        \
+      .Attr("Tseed: {int32, int64, real}")                    \
       .SetShapeFn(StatelessShape)
 
 REGISTER_STATELESS_OP("StatelessRandomUniform");

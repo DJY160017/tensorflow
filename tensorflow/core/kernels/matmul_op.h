@@ -17,6 +17,7 @@ limitations under the License.
 #define TENSORFLOW_CORE_KERNELS_MATMUL_OP_H_
 
 #include <iRRAM/lib.h>
+#include <iostream>
 #include "third_party/eigen3/unsupported/Eigen/CXX11/Tensor"
 #include "tensorflow/core/framework/tensor.h"
 #include "tensorflow/core/framework/tensor_types.h"
@@ -43,7 +44,9 @@ template <typename Device, typename In0, typename In1, typename Out,
           typename DimPair>
 void MatMul(const Device& d, Out out, In0 in0, In1 in1,
             const DimPair& dim_pair) {
+  std::cout<<"matmul: device init before"<<std::endl;
   out.device(d) = in0.contract(in1, dim_pair);
+  std::cout<<"matmul: device init after"<<std::endl;
 }
 
 template <typename Device, typename T>

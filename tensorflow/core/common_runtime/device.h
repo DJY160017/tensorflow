@@ -31,6 +31,8 @@ limitations under the License.
 
 #include <memory>
 #include <string>
+#include <iRRAM/lib.h>
+#include <iostream>
 
 #include "tensorflow/core/framework/allocator.h"
 #include "tensorflow/core/framework/control_flow.h"

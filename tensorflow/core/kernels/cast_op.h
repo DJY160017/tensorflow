@@ -148,6 +148,11 @@ struct CastFunctor {
                   typename TTypes<Tin>::ConstFlat i, bool truncate = false);
 };
 
+template <typename Device, typename Tin, typename Tout>
+struct CreateCastFunctor {
+  void operator()(OpKernelContext* ctx, const Tensor& inp, Tensor* out, bool truncate = false);
+};
+
 // Only enable LSBZeroSetterHelper for 64 and 32 bit input data types.
 // Specialize for others if needed in future.
 template <typename I>
